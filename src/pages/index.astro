@@ -1,0 +1,248 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import FeaturedStory from '@/components/FeaturedStory.astro';
+import StoryCard from '@/components/StoryCard.astro';
+import { stories, categories } from '@/data/stories';
+import { ArrowLeft, Search, Quote } from 'lucide-astro';
+
+const featuredStory = stories.find((s) => s.featured) || stories[0];
+const editorialPicks = stories.slice(1, 4);
+const allStories = stories;
+---
+
+<Layout
+  title="يحدث في الكويت — حكايات المكان وأهله"
+  description="مجلة مستقلة تنصت للمدينة، وتكتب عن تفاصيلها الصغيرة التي تصنع حكاية كبيرة."
+>
+  <div class="max-w-[1320px] mx-auto px-5 md:px-10">
+    <!-- Hero Header Title Banner -->
+    <section class="pt-8 md:pt-12 pb-7 border-b border-[#d9d1c2] flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div>
+        <div class="text-[12px] tracking-widest text-[#126447] font-semibold mb-2 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-[#126447]"></span>
+          المشهد من هنا — العدد ٠٦
+        </div>
+        <h1 class="text-[36px] md:text-[52px] leading-[1.15] font-extrabold tracking-tight text-[#18323c]">
+          الكويت، كما نعيشها.
+        </h1>
+      </div>
+      <p class="max-w-[340px] text-[14px] md:text-[15px] leading-[1.9] text-[#72766f]">
+        مجلة مستقلة تنصت للمدينة، وتكتب عن تفاصيلها الصغيرة التي تصنع حكاية كبيرة.
+      </p>
+    </section>
+
+    <!-- Hero Section: Featured Story & Editorial Desk -->
+    <section class="grid lg:grid-cols-[1.65fr_0.85fr] gap-8 lg:gap-10 py-8 md:py-12">
+      <!-- Main Featured Story -->
+      <FeaturedStory story={featuredStory} />
+
+      <!-- Editorial Desk Sidebar -->
+      <aside class="flex flex-col bg-[#ede7dc]/60 rounded-lg p-6 border border-[#d9d1c2]/60">
+        <div class="flex items-center justify-between pb-4 border-b border-[#d9d1c2]">
+          <h2 class="text-[19px] font-bold text-[#18323c]">على طاولة التحرير</h2>
+          <span class="text-[11px] text-[#8c8980] bg-white/70 px-2.5 py-0.5 rounded-full font-medium">مختاراتنا</span>
+        </div>
+
+        <div class="divide-y divide-[#d9d1c2]/70 flex-1">
+          {editorialPicks.map((story, i) => (
+            <div class="py-4 first:pt-4">
+              <div class="flex items-center gap-2 text-[11px] text-[#126447] mb-2 font-medium">
+                <span class="font-serif text-[16px] text-[#cf3935] font-bold">٠{i + 1}</span>
+                <span>{story.category}</span>
+                <span class="text-[#c8bda9]">·</span>
+                <span class="text-[#8c8980]">{story.location}</span>
+              </div>
+              <StoryCard story={story} compact={true} />
+            </div>
+          ))}
+        </div>
+
+        <a
+          href="#كل-الحكايات"
+          class="mt-4 pt-4 border-t border-[#d9d1c2]/60 flex items-center justify-between text-[13px] font-semibold text-[#126447] hover:text-[#0e5038] group"
+        >
+          <span>تصفح جميع الحكايات</span>
+          <ArrowLeft class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+        </a>
+      </aside>
+    </section>
+
+    <!-- Mood / Category Filter Bar -->
+    <section class="border-y border-[#d9d1c2] py-4 my-2 flex items-center gap-4 overflow-x-auto" aria-label="اختيار فئة">
+      <span class="text-[12px] font-semibold text-[#8c8980] whitespace-nowrap">
+        اقرأ حسب المزاج:
+      </span>
+      <div class="flex items-center gap-2 min-w-max" id="category-filter-buttons">
+        {categories.map((c) => (
+          <button
+            type="button"
+            class={`category-tab-btn rounded-full px-4 py-2 text-[13px] font-medium transition-all ${
+              c === 'الكل'
+                ? 'bg-[#18323c] text-[#f4f0e7] shadow-sm active-tab'
+                : 'bg-transparent text-[#546267] hover:bg-[#e8e1d4]'
+            }`}
+            data-category={c}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+    </section>
+
+    <!-- All Stories Grid Section -->
+    <section id="كل-الحكايات" class="pt-10 pb-16 scroll-mt-24">
+      <div class="flex items-end justify-between gap-4 mb-8">
+        <div>
+          <div class="text-[12px] tracking-wider text-[#126447] font-semibold mb-1">
+            من المدينة وأهلها
+          </div>
+          <h2 id="stories-section-title" class="text-[28px] md:text-[38px] font-bold text-[#18323c]">
+            حكايات تستحق الوقوف
+          </h2>
+        </div>
+        <span id="stories-count" class="text-[13px] text-[#8c8980] font-medium">
+          {allStories.length} حكايات
+        </span>
+      </div>
+
+      <!-- Stories Grid -->
+      <div id="stories-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+        {allStories.map((story) => (
+          <div class="story-item transition-all duration-300" data-story-category={story.category}>
+            <StoryCard story={story} />
+          </div>
+        ))}
+      </div>
+
+      <!-- Empty State -->
+      <div id="no-stories-msg" class="hidden py-16 text-center border-2 border-dashed border-[#c9c1b3] rounded-xl my-6">
+        <Search class="w-8 h-8 mx-auto mb-3 text-[#126447]" />
+        <h3 class="font-bold text-lg text-[#18323c]">لا توجد حكايات في هذا التصنيف حاليًا</h3>
+        <p class="text-sm text-[#777b74] mt-1.5">اختر فئة أخرى أو اعرض كل الحكايات.</p>
+        <button
+          type="button"
+          id="reset-filter-btn"
+          class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#126447] underline underline-offset-4"
+        >
+          عرض كل الحكايات
+        </button>
+      </div>
+    </section>
+
+    <!-- Editorial Quote Section -->
+    <section class="grid md:grid-cols-[0.9fr_1.1fr] my-12 bg-[#e8e1d4] rounded-2xl overflow-hidden shadow-sm border border-[#d9d1c2]/70">
+      <div class="relative min-h-[280px] overflow-hidden">
+        <img
+          src="/images/breakfast.jpg"
+          alt="مائدة فطور كويتية"
+          class="absolute inset-0 w-full h-full object-cover"
+          loading="lazy"
+        />
+        <div class="absolute inset-0 bg-[#18323c]/20"></div>
+      </div>
+      <div class="p-8 md:p-14 flex flex-col justify-center">
+        <div class="flex items-center gap-2 text-[#126447] text-[12px] font-semibold tracking-wider">
+          <Quote class="w-4 h-4" />
+          <span>من دفتر المكان</span>
+        </div>
+        <blockquote class="text-[22px] md:text-[30px] leading-[1.7] font-bold text-[#18323c] mt-3">
+          «الأماكن ما تعيش بحيطانها، تعيش بالناس اللي يردّون لها.»
+        </blockquote>
+        <span class="text-[13px] text-[#7e7c73] mt-3">
+          من حكاية عن سوق المباركية — صيف ٢٠٢٥
+        </span>
+        <div class="mt-6">
+          <a
+            href={`/story/${featuredStory.slug}`}
+            class="inline-flex items-center gap-2 text-[14px] font-semibold text-[#126447] hover:text-[#0e5038] group"
+          >
+            <span>اقرأ الحكاية كاملة</span>
+            <ArrowLeft class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- About The Magazine Section -->
+    <section
+      id="عن-المجلة"
+      class="py-16 md:py-20 border-t border-[#d9d1c2] grid md:grid-cols-2 gap-10 items-center scroll-mt-20"
+    >
+      <div>
+        <span class="text-[12px] font-semibold tracking-widest text-[#126447] uppercase">
+          ليش نكتب؟
+        </span>
+        <h2 class="text-[32px] md:text-[44px] font-bold leading-[1.3] text-[#18323c] mt-2.5">
+          لأن كل شارع<br />عنده سالفة.
+        </h2>
+      </div>
+      <div class="space-y-4 text-[15px] md:text-[16px] leading-[2.1] text-[#55656b]">
+        <p>
+          «يحدث في الكويت» مساحة ثقافية وتوثيقية مستقلة تلتقط تفاصيل الحياة اليومية وهي تمشي. نكتب عن الأماكن التي نرجع لها مرارًا، والناس الذين يمنحون المدينة دفئها، والطقوس التي قد تعبر بنا دون أن ننتبه لجمالها.
+        </p>
+        <p>
+          حكاياتنا تنطلق من الذاكرة، تمر بالأسواق والمقاهي والشواطئ، وتستقر في بيوت الكويت بكل بساطتها وألفتها.
+        </p>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  // Client-side category filtering
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.category-tab-btn');
+  const items = document.querySelectorAll<HTMLElement>('.story-item');
+  const sectionTitle = document.getElementById('stories-section-title');
+  const storiesCount = document.getElementById('stories-count');
+  const noStoriesMsg = document.getElementById('no-stories-msg');
+  const resetBtn = document.getElementById('reset-filter-btn');
+
+  function filterCategory(cat: string) {
+    buttons.forEach((btn) => {
+      const match = btn.getAttribute('data-category') === cat;
+      if (match) {
+        btn.className = 'category-tab-btn rounded-full px-4 py-2 text-[13px] font-medium transition-all bg-[#18323c] text-[#f4f0e7] shadow-sm active-tab';
+      } else {
+        btn.className = 'category-tab-btn rounded-full px-4 py-2 text-[13px] font-medium transition-all bg-transparent text-[#546267] hover:bg-[#e8e1d4]';
+      }
+    });
+
+    let visibleCount = 0;
+    items.forEach((item) => {
+      const itemCat = item.getAttribute('data-story-category');
+      if (cat === 'الكل' || itemCat === cat) {
+        item.style.display = '';
+        visibleCount++;
+      } else {
+        item.style.display = 'none';
+      }
+    });
+
+    if (sectionTitle) {
+      sectionTitle.textContent = cat === 'الكل' ? 'حكايات تستحق الوقوف' : `حكايات ${cat}`;
+    }
+
+    if (storiesCount) {
+      storiesCount.textContent = `${visibleCount} حكايات`;
+    }
+
+    if (noStoriesMsg) {
+      if (visibleCount === 0) {
+        noStoriesMsg.classList.remove('hidden');
+      } else {
+        noStoriesMsg.classList.add('hidden');
+      }
+    }
+  }
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const cat = btn.getAttribute('data-category') || 'الكل';
+      filterCategory(cat);
+    });
+  });
+
+  resetBtn?.addEventListener('click', () => {
+    filterCategory('الكل');
+  });
+</script>

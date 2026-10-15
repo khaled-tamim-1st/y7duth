@@ -1,0 +1,57 @@
+---
+import type { Story } from '@/data/stories';
+import { ArrowLeft } from 'lucide-astro';
+
+interface Props {
+  story: Story;
+}
+
+const { story } = Astro.props;
+---
+
+<section class="group relative min-h-[420px] md:min-h-[520px] rounded-lg overflow-hidden bg-[#263b3e] flex flex-col justify-end text-right">
+  <img
+    src={story.image}
+    alt={story.title}
+    class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+    loading="eager"
+  />
+  <div class="image-wash absolute inset-0"></div>
+
+  <!-- Weekly Badge -->
+  <div class="absolute top-5 right-5 flex items-center gap-2 bg-[#f4f0e7]/95 px-3.5 py-1.5 rounded-full text-[11px] font-medium text-[#126447] shadow-sm">
+    <span class="w-2 h-2 rounded-full bg-[#c93835] animate-pulse"></span>
+    حكاية هذا الأسبوع
+  </div>
+
+  <!-- Content Overlay -->
+  <div class="relative z-10 p-6 md:p-10 text-[#fbf7ed]">
+    <div class="flex items-center gap-2 text-[12px] text-[#b8d3c2] mb-3">
+      <span class="font-medium">{story.category}</span>
+      <span class="text-white/40">/</span>
+      <span>{story.location}</span>
+      <span class="text-white/40">·</span>
+      <span>{story.read}</span>
+    </div>
+
+    <h2 class="max-w-[760px] text-[28px] md:text-[44px] font-bold leading-[1.3] tracking-tight">
+      <a href={`/story/${story.slug}`} class="text-white hover:text-[#b8d3c2] transition-colors">
+        {story.title}
+      </a>
+    </h2>
+
+    <p class="max-w-[620px] text-[14px] md:text-[16px] text-white/85 leading-[1.85] mt-3.5">
+      {story.excerpt}
+    </p>
+
+    <div class="mt-6">
+      <a
+        href={`/story/${story.slug}`}
+        class="inline-flex items-center gap-2 border-b-2 border-[#b4cabb] hover:border-white text-white pb-1 text-[14px] font-medium transition-all group-hover:gap-3"
+      >
+        <span>اقرأ الحكاية</span>
+        <ArrowLeft class="w-4 h-4" />
+      </a>
+    </div>
+  </div>
+</section>

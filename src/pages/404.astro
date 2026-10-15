@@ -1,0 +1,34 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import { ArrowRight, Compass } from 'lucide-astro';
+---
+
+<Layout
+  title="الصفحة غير موجودة — يحدث في الكويت"
+  description="عذرًا، الصفحة أو الحكاية التي تبحث عنها غير متوفرة."
+>
+  <div class="min-h-[60vh] flex items-center justify-center px-5 py-20 text-center">
+    <div class="max-w-[500px] mx-auto">
+      <div class="w-16 h-16 rounded-full bg-[#e8e1d4] text-[#126447] grid place-items-center mx-auto mb-6 shadow-sm">
+        <Compass class="w-8 h-8" />
+      </div>
+
+      <span class="text-sm font-bold text-[#cf3935] tracking-widest uppercase">خطأ ٤٠٤</span>
+      <h1 class="text-[32px] md:text-[40px] font-bold text-[#18323c] mt-2 mb-4 leading-tight">
+        ضاعت الدرب؟ الحكاية مو هني
+      </h1>
+
+      <p class="text-[15px] text-[#637172] leading-relaxed mb-8">
+        يبدو أن الرابط الذي طلبته قد تغير أو تم نقله. لا تقلق، بإمكانك العودة دائمًا إلى الصفحة الرئيسية لتصفح باقي الحكايات.
+      </p>
+
+      <a
+        href="/"
+        class="inline-flex items-center gap-2 bg-[#126447] hover:bg-[#0e5038] text-white px-6 py-3 rounded-full text-sm font-medium shadow-sm transition-all"
+      >
+        <ArrowRight class="w-4 h-4" />
+        <span>العودة إلى الصفحة الرئيسية</span>
+      </a>
+    </div>
+  </div>
+</Layout>

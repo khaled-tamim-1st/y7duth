@@ -1,0 +1,85 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import StoryCard from '@/components/StoryCard.astro';
+import { stories, categories, type Category } from '@/data/stories';
+import { ArrowRight, Tag } from 'lucide-astro';
+
+export function getStaticPaths() {
+  const validCategories = categories.filter((c) => c !== 'الكل');
+  return validCategories.map((cat) => ({
+    params: { category: cat },
+    props: { category: cat },
+  }));
+}
+
+interface Props {
+  category: Category;
+}
+
+const { category } = Astro.props;
+
+const categoryDescriptions: Record<string, string> = {
+  أماكن: 'شوارع، أسواق، وزوايا قديمة لا تفقد روحها مع الزمن.',
+  حكايات: 'تفاصيل إنسانية من الفرجان وعابري اليوم في الكويت.',
+  مذاق: 'عادات المائدة، مطابخ البيوت، ومذاقات تحكي أصل المكان.',
+  ذاكرة: 'البحر، السفر، وأيام عاشت في كلام الأجداد ونصوصهم.',
+  ثقافة: 'الفنون، الموسيقى، المعارض، وإبداعات تصنع مشهد اليوم.',
+  يوميات: 'مشاهد سريعة وإيقاعات يومية تميز المشهد الكويتي.',
+};
+
+const categoryStories = stories.filter((s) => s.category === category);
+const desc = categoryDescriptions[category] || `جميع الحكايات والتقارير المصنفة تحت ${category}.`;
+---
+
+<Layout
+  title={`حكايات ${category} — يحدث في الكويت`}
+  description={desc}
+>
+  <div class="max-w-[1320px] mx-auto px-5 md:px-10 py-10 md:py-14">
+    <!-- Breadcrumb & Header -->
+    <div class="mb-8 border-b border-[#d9d1c2] pb-8">
+      <a
+        href="/"
+        class="inline-flex items-center gap-2 text-[13px] font-medium text-[#647170] hover:text-[#126447] mb-6 transition-colors"
+      >
+        <ArrowRight class="w-4 h-4" />
+        <span>الصفحة الرئيسية</span>
+      </a>
+
+      <div class="flex items-center gap-2 text-[12px] font-semibold text-[#126447] mb-2 uppercase tracking-wider">
+        <Tag class="w-3.5 h-3.5" />
+        <span>دفتر التصنيفات</span>
+      </div>
+
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 class="text-[34px] md:text-[48px] font-bold text-[#18323c] tracking-tight">
+            حكايات {category}
+          </h1>
+          <p class="text-[16px] text-[#637172] mt-2 max-w-[600px] leading-relaxed">
+            {desc}
+          </p>
+        </div>
+        <span class="text-[13px] text-[#8c8980] bg-white/70 px-3.5 py-1.5 rounded-full border border-[#d9d1c2] font-medium">
+          {categoryStories.length} حكايات مسجلة
+        </span>
+      </div>
+    </div>
+
+    <!-- Stories Grid -->
+    {categoryStories.length > 0 ? (
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+        {categoryStories.map((story) => (
+          <StoryCard story={story} />
+        ))}
+      </div>
+    ) : (
+      <div class="py-20 text-center border-2 border-dashed border-[#c9c1b3] rounded-2xl">
+        <p class="text-lg font-semibold text-[#18323c]">لا توجد حكايات منشورة في هذا التصنيف حاليًا</p>
+        <a href="/" class="mt-4 inline-block text-[#126447] underline underline-offset-4 font-medium">
+          العودة لكل الحكايات
+        </a>
+      </div>
+    )}
+  </div>
+</Layout>

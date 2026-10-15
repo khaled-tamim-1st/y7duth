@@ -1,0 +1,74 @@
+---
+import type { Story } from '@/data/stories';
+
+interface Props {
+  story: Story;
+  compact?: boolean;
+}
+
+const { story, compact = false } = Astro.props;
+---
+
+<article
+  class={`group block text-right ${
+    compact ? 'grid grid-cols-[1fr_96px] gap-4 items-center' : ''
+  }`}
+  data-story-slug={story.slug}
+  data-story-category={story.category}
+>
+  <div
+    class={`relative overflow-hidden bg-[#d8d1c4] rounded-md ${
+      compact ? 'order-last aspect-square' : 'aspect-[1.48]'
+    }`}
+  >
+    <a href={`/story/${story.slug}`} class="block w-full h-full" tabindex="-1" aria-hidden="true">
+      <img
+        src={story.image}
+        alt={story.title}
+        class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+    {!compact && (
+      <a
+        href={`/category/${encodeURIComponent(story.category)}`}
+        class="absolute top-3 right-3 text-[11px] font-medium bg-[#f4f0e7]/95 text-[#126447] px-3 py-1 rounded-full shadow-sm hover:bg-white transition-colors"
+      >
+        {story.category}
+      </a>
+    )}
+  </div>
+
+  <div class={compact ? 'py-1' : 'pt-4'}>
+    {compact && (
+      <a
+        href={`/category/${encodeURIComponent(story.category)}`}
+        class="text-[11px] font-medium text-[#126447] hover:underline"
+      >
+        {story.category}
+      </a>
+    )}
+    <h3
+      class={`font-semibold text-[#18323c] leading-[1.65] group-hover:text-[#126447] transition-colors ${
+        compact ? 'text-[15px] mt-1' : 'text-[21px] md:text-[23px]'
+      }`}
+    >
+      <a href={`/story/${story.slug}`} class="no-underline hover:text-[#126447]">
+        {story.title}
+      </a>
+    </h3>
+    {!compact && (
+      <p class="text-[14px] leading-[1.9] text-[#6c7777] mt-2 line-clamp-2">
+        {story.excerpt}
+      </p>
+    )}
+    <div class="flex items-center gap-2 mt-3 text-[11px] text-[#8c8980]">
+      <span>{story.author}</span>
+      <span class="w-[3px] h-[3px] bg-[#c8bda9] rounded-full"></span>
+      <span>{story.date}</span>
+      <span class="w-[3px] h-[3px] bg-[#c8bda9] rounded-full"></span>
+      <span>{story.read}</span>
+    </div>
+  </div>
+</article>

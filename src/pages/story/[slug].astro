@@ -1,0 +1,345 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import StoryCard from '@/components/StoryCard.astro';
+import { stories, type Story } from '@/data/stories';
+import {
+  ArrowRight,
+  ArrowLeft,
+  Clock3,
+  Bookmark,
+  Share2,
+  Check,
+  Copy,
+  MapPin,
+  Calendar,
+} from 'lucide-astro';
+
+export function getStaticPaths() {
+  return stories.map((story) => ({
+    params: { slug: story.slug },
+    props: { story },
+  }));
+}
+
+interface Props {
+  story: Story;
+}
+
+const { story } = Astro.props;
+
+if (!story) {
+  return Astro.redirect('/404');
+}
+
+const relatedStories = stories.filter((s) => s.slug !== story.slug).slice(0, 2);
+---
+
+<Layout
+  title={`${story.title} — يحدث في الكويت`}
+  description={story.excerpt}
+  image={story.image}
+  article={{
+    author: story.author,
+    date: story.date,
+    category: story.category,
+  }}
+>
+  <article class="fade-up">
+    <!-- Article Header -->
+    <header class="max-w-[900px] mx-auto px-5 md:px-8 pt-8 md:pt-12">
+      <!-- Back Link -->
+      <a
+        href="/"
+        class="inline-flex items-center gap-2 text-[13px] font-medium text-[#647170] hover:text-[#126447] transition-colors"
+      >
+        <ArrowRight class="w-4 h-4" />
+        <span>كل الحكايات</span>
+      </a>
+
+      <!-- Category & Location -->
+      <div class="mt-8 flex items-center gap-2.5 text-[13px] font-medium text-[#126447]">
+        <a
+          href={`/category/${encodeURIComponent(story.category)}`}
+          class="hover:underline"
+        >
+          {story.category}
+        </a>
+        <span class="text-[#b7ad9d]">/</span>
+        <span class="flex items-center gap-1 text-[#6a7574]">
+          <MapPin class="w-3.5 h-3.5 text-[#cf3935]" />
+          {story.location}
+        </span>
+      </div>
+
+      <!-- Main Title -->
+      <h1 class="text-[32px] md:text-[50px] leading-[1.3] font-bold tracking-tight text-[#18323c] mt-3">
+        {story.title}
+      </h1>
+
+      <!-- Excerpt -->
+      <p class="text-[17px] md:text-[20px] leading-[1.85] text-[#5c6868] mt-4 max-w-[780px]">
+        {story.excerpt}
+      </p>
+
+      <!-- Author & Interaction Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-4 border-y border-[#d9d1c2] py-4 mt-8 text-[13px] text-[#777b74]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-[#dce5da] text-[#126447] font-bold grid place-items-center text-base shadow-sm">
+            {story.author.charAt(0)}
+          </div>
+          <div>
+            <div class="font-semibold text-[#18323c]">كتابة {story.author}</div>
+            {story.authorRole && (
+              <div class="text-[11px] text-[#8c8980]">{story.authorRole}</div>
+            )}
+          </div>
+          <span class="text-[#b7ad9d] mx-1">·</span>
+          <span class="flex items-center gap-1">
+            <Calendar class="w-3.5 h-3.5" />
+            {story.date}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center gap-1.5 text-[12px] bg-white/70 px-3 py-1 rounded-full border border-[#d9d1c2]">
+            <Clock3 class="w-3.5 h-3.5 text-[#126447]" />
+            {story.read}
+          </span>
+
+          <!-- Bookmark Button -->
+          <button
+            type="button"
+            id="bookmark-btn"
+            data-slug={story.slug}
+            aria-label="حفظ الحكاية"
+            class="p-2.5 rounded-full hover:bg-[#e7e0d4] text-[#18323c] border border-transparent transition-all"
+          >
+            <Bookmark class="w-4 h-4 bookmark-icon" />
+          </button>
+
+          <!-- Share Button -->
+          <button
+            type="button"
+            id="share-btn"
+            aria-label="مشاركة أو نسخ الرابط"
+            class="p-2.5 rounded-full hover:bg-[#e7e0d4] text-[#18323c] border border-transparent transition-all"
+          >
+            <Share2 class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Featured Image -->
+    <figure class="max-w-[1100px] mx-auto px-5 md:px-8 mt-8 md:mt-10">
+      <div class="rounded-xl overflow-hidden shadow-md bg-[#d8d1c4]">
+        <img
+          src={story.image}
+          alt={story.title}
+          class="w-full max-h-[580px] object-cover"
+          loading="eager"
+        />
+      </div>
+      <figcaption class="text-[12px] text-[#88867e] mt-2.5 px-1 flex items-center justify-between">
+        <span>{story.location} — من دفتر «يحدث في الكويت»</span>
+        <span>صورة توثيقية</span>
+      </figcaption>
+    </figure>
+
+    <!-- Article Content -->
+    <div class="max-w-[780px] mx-auto px-5 md:px-8 py-10 md:py-14">
+      <div class="article-prose">
+        <!-- Lead paragraph -->
+        <p class="text-[20px] md:text-[23px] leading-[2.1] font-medium text-[#18323c] border-r-4 border-[#126447] pr-5 my-6">
+          {story.body[0]}
+        </p>
+
+        <!-- Body paragraphs -->
+        {story.body.slice(1).map((paragraph, index) => (
+          <div>
+            {index === 1 && <h2>مكانٌ يعرف أهله ونبضه</h2>}
+            <p>{paragraph}</p>
+          </div>
+        ))}
+      </div>
+
+      <!-- Article Action Footer -->
+      <div class="border-y border-[#d9d1c2] py-6 mt-12 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center bg-[#ede7dc]/40 px-5 rounded-xl">
+        <div>
+          <span class="block text-[11px] text-[#8c8980] font-medium">هذه الحكاية من</span>
+          <span class="text-[15px] font-bold text-[#126447] mt-0.5 inline-block">
+            دفتر {story.category} — {story.location}
+          </span>
+        </div>
+        <div class="flex gap-2.5">
+          <button
+            type="button"
+            id="bookmark-btn-bottom"
+            data-slug={story.slug}
+            class="inline-flex items-center gap-2 border border-[#cfc6b7] bg-white/80 rounded-full px-4 py-2 text-[13px] font-medium text-[#18323c] hover:bg-white shadow-sm transition-all"
+          >
+            <Bookmark class="w-4 h-4 bookmark-icon-bottom" />
+            <span id="bookmark-text-bottom">احفظها لوقت ثاني</span>
+          </button>
+          <button
+            type="button"
+            id="share-btn-bottom"
+            class="inline-flex items-center gap-2 bg-[#18323c] hover:bg-[#254652] text-[#f4f0e7] rounded-full px-4 py-2 text-[13px] font-medium shadow-sm transition-all"
+          >
+            <Copy class="w-4 h-4" />
+            <span id="copy-btn-text">انسخ الرابط</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation to More Stories -->
+      <div class="mt-10 p-6 md:p-8 bg-[#e8e1d4] rounded-2xl flex flex-col sm:flex-row justify-between gap-5 items-start sm:items-center border border-[#d9d1c2]">
+        <div>
+          <span class="text-[11px] font-semibold text-[#126447] tracking-wider uppercase">انتهت الحكاية؟</span>
+          <p class="text-[17px] md:text-[18px] font-bold text-[#18323c] mt-1">
+            باقي حكايات من شوارع الكويت وأسواقها.
+          </p>
+        </div>
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 text-[13px] font-bold text-[#126447] hover:text-[#0e5038] group"
+        >
+          <span>تصفح كل الحكايات</span>
+          <ArrowLeft class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Related Stories Section -->
+    <section class="bg-[#e8e1d4] py-12 md:py-16 border-t border-[#d9d1c2]">
+      <div class="max-w-[1100px] mx-auto px-5 md:px-8">
+        <div class="flex justify-between items-end mb-8">
+          <div>
+            <span class="text-[12px] font-semibold text-[#126447] tracking-wider uppercase">اقرأ بعد</span>
+            <h2 class="text-[26px] md:text-[32px] font-bold text-[#18323c] mt-1">حكايات على نفس الموجة</h2>
+          </div>
+          <a href="/" class="text-[13px] font-semibold text-[#126447] hover:underline flex items-center gap-1">
+            <span>كل الحكايات</span>
+            <span>←</span>
+          </a>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8">
+          {relatedStories.map((s) => (
+            <StoryCard story={s} />
+          ))}
+        </div>
+      </div>
+    </section>
+  </article>
+
+  <!-- Toast Notification -->
+  <div
+    id="toast-notification"
+    class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#18323c] text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 text-sm z-50 transition-all duration-300 opacity-0 pointer-events-none translate-y-3"
+  >
+    <Check class="w-4 h-4 text-[#b8d3c2]" />
+    <span id="toast-message">تم نسخ رابط الحكاية بنجاح</span>
+  </div>
+</Layout>
+
+<script>
+  // Toast Helper
+  const toast = document.getElementById('toast-notification');
+  const toastMsg = document.getElementById('toast-message');
+
+  function showToast(msg: string) {
+    if (!toast || !toastMsg) return;
+    toastMsg.textContent = msg;
+    toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
+    toast.classList.add('opacity-100', 'translate-y-0');
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
+      toast.classList.remove('opacity-100', 'translate-y-0');
+    }, 2400);
+  }
+
+  // Share / Copy Link
+  const shareBtn = document.getElementById('share-btn');
+  const shareBtnBottom = document.getElementById('share-btn-bottom');
+  const copyBtnText = document.getElementById('copy-btn-text');
+
+  async function handleShare() {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: document.title,
+          url: window.location.href,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        if (copyBtnText) copyBtnText.textContent = 'تم النسخ!';
+        showToast('تم نسخ رابط الحكاية إلى الحافظة');
+        setTimeout(() => {
+          if (copyBtnText) copyBtnText.textContent = 'انسخ الرابط';
+        }, 2000);
+      }
+    } catch {
+      await navigator.clipboard.writeText(window.location.href);
+      showToast('تم نسخ الرابط بنجاح');
+    }
+  }
+
+  shareBtn?.addEventListener('click', handleShare);
+  shareBtnBottom?.addEventListener('click', handleShare);
+
+  // Bookmark / Save Story in LocalStorage
+  const bookmarkBtn = document.getElementById('bookmark-btn');
+  const bookmarkBtnBottom = document.getElementById('bookmark-btn-bottom');
+  const bookmarkTextBottom = document.getElementById('bookmark-text-bottom');
+  const slug = bookmarkBtn?.getAttribute('data-slug') || '';
+
+  function getSavedStories(): string[] {
+    try {
+      return JSON.parse(localStorage.getItem('saved_stories') || '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  function setBookmarkUI(isSaved: boolean) {
+    if (bookmarkBtn) {
+      if (isSaved) {
+        bookmarkBtn.classList.add('bg-[#126447]', 'text-white');
+      } else {
+        bookmarkBtn.classList.remove('bg-[#126447]', 'text-white');
+      }
+    }
+    if (bookmarkTextBottom) {
+      bookmarkTextBottom.textContent = isSaved ? 'تم حفظ الحكاية' : 'احفظها لوقت ثاني';
+    }
+    if (bookmarkBtnBottom) {
+      if (isSaved) {
+        bookmarkBtnBottom.classList.add('bg-[#126447]', 'text-white', 'border-transparent');
+      } else {
+        bookmarkBtnBottom.classList.remove('bg-[#126447]', 'text-white', 'border-transparent');
+      }
+    }
+  }
+
+  let savedList = getSavedStories();
+  let isSaved = savedList.includes(slug);
+  setBookmarkUI(isSaved);
+
+  function toggleBookmark() {
+    savedList = getSavedStories();
+    if (savedList.includes(slug)) {
+      savedList = savedList.filter((s) => s !== slug);
+      isSaved = false;
+      showToast('تمت إزالة الحكاية من المحفوظات');
+    } else {
+      savedList.push(slug);
+      isSaved = true;
+      showToast('تم حفظ الحكاية بنجاح للقراءة لاحقًا');
+    }
+    localStorage.setItem('saved_stories', JSON.stringify(savedList));
+    setBookmarkUI(isSaved);
+  }
+
+  bookmarkBtn?.addEventListener('click', toggleBookmark);
+  bookmarkBtnBottom?.addEventListener('click', toggleBookmark);
+</script>

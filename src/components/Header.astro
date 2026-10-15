@@ -1,0 +1,148 @@
+---
+import { categories } from '@/data/stories';
+import { Search, Menu, X } from 'lucide-astro';
+
+const navCategories = categories.filter((c) => c !== 'الكل');
+---
+
+<!-- Top Date & Weather Ribbon -->
+<div class="bg-[#18323c] text-[#f5f0e6] text-[11px] md:text-xs border-b border-[#24424e]">
+  <div class="max-w-[1320px] mx-auto px-5 md:px-10 h-9 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="tracking-wide">الأربعاء، ١٨ يونيو ٢٠٢٥</span>
+      <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#cf3935]"></span>
+      <span class="text-white/80">الكويت ٣٨°</span>
+    </div>
+    <span class="hidden sm:block text-white/60 font-light">حكايات من هنا، تُروى كما هي</span>
+  </div>
+</div>
+
+<!-- Main Header -->
+<header class="bg-[#f4f0e7] border-b border-[#d9d1c2] sticky top-0 z-30 backdrop-blur-md bg-opacity-95">
+  <div class="max-w-[1320px] mx-auto px-5 md:px-10 h-[88px] flex items-center justify-between gap-4">
+    <!-- Brand Logo & Name -->
+    <a href="/" class="flex items-center gap-3.5 group no-underline">
+      <div class="relative w-[50px] h-[50px] rounded-lg overflow-hidden flex-shrink-0 bg-white/70 p-1 border border-[#d9d1c2] shadow-sm transition-transform duration-300 group-hover:scale-105">
+        <img
+          src="/brand/kuwait-logo.png"
+          alt="شعار يحدث في الكويت"
+          class="w-full h-full object-contain"
+          width="48"
+          height="48"
+        />
+      </div>
+      <div class="leading-tight">
+        <span class="block text-[22px] md:text-[25px] font-bold tracking-tight text-[#18323c] group-hover:text-[#126447] transition-colors">
+          يحدث في الكويت
+        </span>
+        <span class="block text-[10px] md:text-[11px] tracking-wider text-[#8b8478] font-medium mt-0.5">
+          حكايات المكان وأهله
+        </span>
+      </div>
+    </a>
+
+    <!-- Desktop Navigation Links -->
+    <nav class="hidden lg:flex items-center gap-7 text-[14px] text-[#41535a] font-medium" aria-label="التنقل الرئيسي">
+      {navCategories.map((cat) => (
+        <a
+          href={`/category/${encodeURIComponent(cat)}`}
+          class="hover:text-[#126447] relative py-1 transition-colors after:content-[''] after:absolute after:bottom-0 after:right-0 after:w-0 after:h-[2px] after:bg-[#126447] hover:after:w-full after:transition-all"
+        >
+          {cat}
+        </a>
+      ))}
+      <a
+        href="/#عن-المجلة"
+        class="hover:text-[#126447] relative py-1 transition-colors"
+      >
+        عن المجلة
+      </a>
+    </nav>
+
+    <!-- Header Actions -->
+    <div class="flex items-center gap-2.5">
+      <!-- Search Trigger Button -->
+      <button
+        id="open-search-btn"
+        type="button"
+        aria-label="ابحث في الحكايات"
+        class="h-10 w-10 grid place-items-center rounded-full hover:bg-[#e8e1d4] text-[#18323c] transition-colors"
+      >
+        <Search class="w-5 h-5" />
+      </button>
+
+      <!-- Newsletter Link -->
+      <a
+        href="/#النشرة"
+        class="hidden sm:inline-flex items-center justify-center bg-[#126447] text-[#f4f0e7] rounded-full px-5 py-2.5 text-[13px] font-medium hover:bg-[#0e5038] shadow-sm hover:shadow transition-all"
+      >
+        رسالتنا الأسبوعية
+      </a>
+
+      <!-- Mobile Menu Toggle Button -->
+      <button
+        id="mobile-menu-btn"
+        type="button"
+        aria-label="فتح القائمة"
+        class="lg:hidden h-10 w-10 grid place-items-center rounded-full hover:bg-[#e8e1d4] text-[#18323c]"
+      >
+        <Menu class="w-5 h-5 menu-open-icon" />
+        <X class="w-5 h-5 menu-close-icon hidden" />
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Dropdown Navigation -->
+  <nav
+    id="mobile-menu"
+    class="hidden lg:hidden border-t border-[#d9d1c2] bg-[#f4f0e7] px-6 py-4 shadow-lg animate-fadeIn"
+    aria-label="قائمة الهاتف"
+  >
+    <div class="grid grid-cols-2 gap-3 pb-3">
+      {navCategories.map((cat) => (
+        <a
+          href={`/category/${encodeURIComponent(cat)}`}
+          class="py-2.5 px-3 rounded-lg text-[#18323c] hover:bg-[#e8e1d4] hover:text-[#126447] font-medium text-sm transition-colors"
+        >
+          {cat}
+        </a>
+      ))}
+      <a
+        href="/#عن-المجلة"
+        class="py-2.5 px-3 rounded-lg text-[#18323c] hover:bg-[#e8e1d4] hover:text-[#126447] font-medium text-sm transition-colors"
+      >
+        عن المجلة
+      </a>
+    </div>
+    <div class="pt-3 border-t border-[#d9d1c2]/60">
+      <a
+        href="/#النشرة"
+        class="block text-center bg-[#126447] text-[#f4f0e7] rounded-full py-2.5 text-sm font-medium hover:bg-[#0e5038]"
+      >
+        اشترك في رسالتنا الأسبوعية
+      </a>
+    </div>
+  </nav>
+</header>
+
+<script>
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const openIcon = mobileMenuBtn?.querySelector('.menu-open-icon');
+  const closeIcon = mobileMenuBtn?.querySelector('.menu-close-icon');
+
+  mobileMenuBtn?.addEventListener('click', () => {
+    const isExpanded = mobileMenu?.classList.toggle('hidden') === false;
+    openIcon?.classList.toggle('hidden', isExpanded);
+    closeIcon?.classList.toggle('hidden', !isExpanded);
+  });
+
+  // Close mobile menu on link click
+  mobileMenu?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      mobileMenu.classList.add('hidden');
+      openIcon?.classList.remove('hidden');
+      closeIcon?.classList.add('hidden');
+    });
+  });
+</script>

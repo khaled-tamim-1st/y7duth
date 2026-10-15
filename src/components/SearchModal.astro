@@ -1,0 +1,212 @@
+---
+import { stories } from '@/data/stories';
+import { Search, X, ArrowLeft, Clock3 } from 'lucide-astro';
+
+// Clean stories payload for search
+const searchData = stories.map((s) => ({
+  slug: s.slug,
+  title: s.title,
+  excerpt: s.excerpt,
+  category: s.category,
+  author: s.author,
+  location: s.location,
+  read: s.read,
+  image: s.image,
+}));
+---
+
+<div
+  id="search-dialog"
+  class="fixed inset-0 z-50 hidden bg-[#18323c]/60 backdrop-blur-sm p-4 md:p-8 flex items-start justify-center overflow-y-auto"
+  role="dialog"
+  aria-modal="true"
+  aria-label="البحث في المجلة"
+>
+  <div
+    class="bg-[#f4f0e7] w-full max-w-[680px] rounded-2xl shadow-2xl border border-[#d9d1c2] overflow-hidden mt-10 md:mt-20 fade-up"
+  >
+    <!-- Search Bar Input Header -->
+    <div class="p-4 md:p-5 border-b border-[#d9d1c2] flex items-center gap-3 bg-white/70">
+      <Search class="w-5 h-5 text-[#126447] flex-shrink-0" />
+      <input
+        id="search-dialog-input"
+        type="search"
+        placeholder="ابحث عن حكاية، مكان، كاتب، أو كلمة..."
+        class="w-full bg-transparent border-0 outline-none text-[16px] md:text-[18px] text-[#18323c] placeholder:text-[#8c8980]"
+        autocomplete="off"
+      />
+      <button
+        id="close-search-btn"
+        type="button"
+        aria-label="إغلاق نافذة البحث"
+        class="p-2 rounded-full hover:bg-[#e8e1d4] text-[#777b74] transition-colors"
+      >
+        <X class="w-5 h-5" />
+      </button>
+    </div>
+
+    <!-- Quick Category Filters -->
+    <div class="px-5 py-3 border-b border-[#d9d1c2]/50 bg-[#ede7db] flex items-center gap-2 overflow-x-auto text-xs">
+      <span class="text-[#8c8980] whitespace-nowrap">اقتراحات:</span>
+      {['المباركية', 'السالمية', 'مذاق', 'ذاكرة', 'ثقافة'].map((tag) => (
+        <button
+          type="button"
+          class="search-tag-chip bg-white/80 hover:bg-white text-[#18323c] px-2.5 py-1 rounded-full whitespace-nowrap transition-colors"
+          data-search-term={tag}
+        >
+          {tag}
+        </button>
+      ))}
+    </div>
+
+    <!-- Search Results Container -->
+    <div
+      id="search-results-list"
+      class="p-4 md:p-6 max-h-[60vh] overflow-y-auto divide-y divide-[#d9d1c2]/60"
+    >
+      <!-- Results injected by client script -->
+    </div>
+
+    <!-- Search Footer -->
+    <div class="px-5 py-3 bg-[#e8e1d4] text-[12px] text-[#8c8980] flex items-center justify-between border-t border-[#d9d1c2]">
+      <span>اضغط <kbd class="px-1.5 py-0.5 rounded bg-white border border-[#d9d1c2] text-[10px] font-mono">ESC</kbd> للإغلاق</span>
+      <span id="search-count-label">اكتب للبحث في جميع الحكايات</span>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ searchData }}>
+  const searchDialog = document.getElementById('search-dialog');
+  const searchInput = document.getElementById('search-dialog-input');
+  const searchResults = document.getElementById('search-results-list');
+  const closeSearchBtn = document.getElementById('close-search-btn');
+  const openSearchBtn = document.getElementById('open-search-btn');
+  const searchCountLabel = document.getElementById('search-count-label');
+  const searchChips = document.querySelectorAll('.search-tag-chip');
+
+  function openSearch(initialQuery = '') {
+    searchDialog.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    if (initialQuery) {
+      searchInput.value = initialQuery;
+      performSearch(initialQuery);
+    } else {
+      renderResults(searchData);
+      searchCountLabel.textContent = `عرض جميع الحكايات (${searchData.length})`;
+    }
+    setTimeout(() => searchInput.focus(), 50);
+  }
+
+  function closeSearch() {
+    searchDialog.classList.add('hidden');
+    document.body.style.overflow = '';
+    searchInput.value = '';
+  }
+
+  function performSearch(query) {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      renderResults(searchData);
+      searchCountLabel.textContent = `عرض جميع الحكايات (${searchData.length})`;
+      return;
+    }
+
+    const filtered = searchData.filter((story) => {
+      const matchTitle = story.title.toLowerCase().includes(q);
+      const matchExcerpt = story.excerpt.toLowerCase().includes(q);
+      const matchCategory = story.category.toLowerCase().includes(q);
+      const matchAuthor = story.author.toLowerCase().includes(q);
+      const matchLocation = story.location.toLowerCase().includes(q);
+      return matchTitle || matchExcerpt || matchCategory || matchAuthor || matchLocation;
+    });
+
+    renderResults(filtered);
+    searchCountLabel.textContent = `تم العثور على ${filtered.length} حكاية`;
+  }
+
+  function renderResults(list) {
+    if (list.length === 0) {
+      searchResults.innerHTML = `
+        <div class="py-12 text-center text-[#777b74]">
+          <p class="text-base font-medium">لم يتم العثور على حكايات تطابق بحثك</p>
+          <p class="text-xs text-[#8c8980] mt-1">جرب كلمات أخرى مثل «المباركية» أو «البحر» أو «السالمية»</p>
+        </div>
+      `;
+      return;
+    }
+
+    searchResults.innerHTML = list
+      .map(
+        (story) => `
+        <a
+          href="/story/${story.slug}"
+          class="flex items-center gap-4 py-3.5 px-3 rounded-lg hover:bg-white/80 transition-all group no-underline text-right"
+        >
+          <img
+            src="${story.image}"
+            alt="${story.title}"
+            class="w-16 h-16 rounded-md object-cover flex-shrink-0 bg-[#d8d1c4]"
+          />
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 text-[11px] text-[#126447] mb-1 font-medium">
+              <span>${story.category}</span>
+              <span class="text-[#c8bda9]">·</span>
+              <span class="text-[#8c8980]">${story.location}</span>
+            </div>
+            <h4 class="text-[15px] font-semibold text-[#18323c] group-hover:text-[#126447] transition-colors truncate">
+              ${story.title}
+            </h4>
+            <p class="text-[12px] text-[#777b74] truncate mt-0.5">
+              ${story.excerpt}
+            </p>
+          </div>
+          <span class="text-[#8c8980] group-hover:text-[#126447] transition-transform group-hover:-translate-x-1 flex-shrink-0">
+            ←
+          </span>
+        </a>
+      `
+      )
+      .join('');
+  }
+
+  // Event Listeners
+  openSearchBtn?.addEventListener('click', () => openSearch());
+  closeSearchBtn?.addEventListener('click', closeSearch);
+
+  searchChips.forEach((chip) => {
+    chip.addEventListener('click', (e) => {
+      const term = e.currentTarget.getAttribute('data-search-term') || '';
+      searchInput.value = term;
+      performSearch(term);
+    });
+  });
+
+  searchInput?.addEventListener('input', (e) => {
+    performSearch(e.target.value);
+  });
+
+  // Close on backdrop click
+  searchDialog?.addEventListener('click', (e) => {
+    if (e.target === searchDialog) closeSearch();
+  });
+
+  // Keyboard shortcut Ctrl+K or Cmd+K
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      if (searchDialog.classList.contains('hidden')) {
+        openSearch();
+      } else {
+        closeSearch();
+      }
+    }
+    if (e.key === 'Escape' && !searchDialog.classList.contains('hidden')) {
+      closeSearch();
+    }
+  });
+
+  // Listen for custom open search event
+  window.addEventListener('open-search-modal', (e) => {
+    openSearch(e.detail?.query || '');
+  });
+</script>
