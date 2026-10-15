@@ -1,24 +1,16 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import StoryCard from '@/components/StoryCard.astro';
-import { stories, categories, type Category } from '@/data/stories';
-import { ArrowRight, Tag, BookOpen, Clock } from 'lucide-astro';
+import { getDb, articlesTable } from '@/db';
+import { categories } from '@/data/stories';
+import { desc as drizzleDesc, and, eq, lte, or } from 'drizzle-orm';
+import { ArrowRight, Tag, BookOpen } from 'lucide-astro';
 
-export const prerender = true;
+const { category } = Astro.params;
 
-export function getStaticPaths() {
-  const validCategories = categories.filter((c) => c !== 'الكل');
-  return validCategories.map((cat) => ({
-    params: { category: cat },
-    props: { category: cat },
-  }));
+if (!category) {
+  return Astro.redirect('/404');
 }
-
-interface Props {
-  category: Category;
-}
-
-const { category } = Astro.props;
 
 const categoryDescriptions: Record<string, string> = {
   'أهل الديرة': 'شخصيات ملهمة، رواد، حرفيون، وقصص إنسانية صنعت روح الكويت وتراثها الحي.',
@@ -28,7 +20,47 @@ const categoryDescriptions: Record<string, string> = {
   'ألبوم الذاكرة': 'صور نادرة، وثائق قديمة، وذكريات توثق معالم الكويت وتاريخها الجميل.',
 };
 
-const categoryStories = stories.filter((s) => s.category === category);
+const db = getDb();
+let categoryRows: any[] = [];
+
+if (db) {
+  try {
+    const now = new Date();
+    categoryRows = await db
+      .select()
+      .from(articlesTable)
+      .where(
+        and(
+          eq(articlesTable.category, category),
+          or(
+            eq(articlesTable.status, 'published'),
+            and(
+              eq(articlesTable.status, 'scheduled'),
+              lte(articlesTable.scheduledFor, now)
+            )
+          )
+        )
+      )
+      .orderBy(drizzleDesc(articlesTable.createdAt));
+  } catch (e) {
+    console.debug('Category query error:', e);
+  }
+}
+
+const categoryStories = categoryRows.map((r) => ({
+  slug: r.slug,
+  category: r.category as any,
+  title: r.title,
+  excerpt: r.excerpt,
+  author: r.authorName,
+  authorRole: r.authorRole,
+  date: new Date(r.publishedAt || r.createdAt).toLocaleDateString('ar-KW'),
+  read: r.readTime || '٥ دقائق',
+  image: r.coverImage,
+  location: r.location || 'الكويت',
+  body: r.content.split('\n\n').filter(Boolean),
+}));
+
 const desc = categoryDescriptions[category] || `جميع الحكايات والتقارير المصنفة تحت ${category}.`;
 ---
 

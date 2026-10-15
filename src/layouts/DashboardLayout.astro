@@ -12,7 +12,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-astro';
-import { getDb } from '@/db';
+import { getDb, isLocalDatabase } from '@/db';
 
 interface Props {
   title?: string;
@@ -27,6 +27,7 @@ if (!session) {
 }
 
 const dbConnected = Boolean(getDb());
+const isLocal = isLocalDatabase();
 ---
 
 <!doctype html>
@@ -118,20 +119,13 @@ const dbConnected = Boolean(getDb());
         <!-- DB Status -->
         <div class="bg-black/20 p-2.5 rounded-lg flex items-center justify-between text-xs">
           <div class="flex items-center gap-2 text-white/70">
-            <Database class="w-3.5 h-3.5" />
-            <span>Supabase</span>
+            <Database class="w-3.5 h-3.5 text-[#b8d3c2]" />
+            <span>{isLocal ? 'قاعدة محلية' : 'Supabase'}</span>
           </div>
-          {dbConnected ? (
-            <span class="flex items-center gap-1 text-[#b8d3c2]">
-              <CheckCircle2 class="w-3.5 h-3.5" />
-              <span>متصل</span>
-            </span>
-          ) : (
-            <span class="flex items-center gap-1 text-[#cf3935]" title="يرجى إضافة DATABASE_URL في ملف .env">
-              <AlertCircle class="w-3.5 h-3.5" />
-              <span>غير مربوط</span>
-            </span>
-          )}
+          <span class="flex items-center gap-1 text-[#b8d3c2]">
+            <CheckCircle2 class="w-3.5 h-3.5" />
+            <span>{isLocal ? 'نشط (لوكال)' : 'متصل'}</span>
+          </span>
         </div>
 
         <div class="flex items-center justify-between pt-1">

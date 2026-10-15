@@ -1,35 +1,111 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { drizzle as drizzlePg } from 'drizzle-orm/postgres-js';
+import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
+import { PGlite } from '@electric-sql/pglite';
 import postgres from 'postgres';
+import fs from 'node:fs';
+import path from 'node:path';
 import * as schema from './schema';
+
+export * from './schema';
 
 const connectionString = process.env.DATABASE_URL;
 
-// Re-export schema
-export * from './schema';
+let dbInstance: any = null;
+let isInitialized = false;
 
-let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
+async function initLocalSchema(pg: PGlite) {
+  if (isInitialized) return;
+  try {
+    await pg.exec(`
+      CREATE TABLE IF NOT EXISTS articles (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        slug VARCHAR(255) UNIQUE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        excerpt TEXT NOT NULL,
+        content TEXT NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        location VARCHAR(150),
+        author_name VARCHAR(150) NOT NULL,
+        author_role VARCHAR(150),
+        cover_image VARCHAR(500) NOT NULL,
+        status VARCHAR(20) DEFAULT 'draft' NOT NULL,
+        scheduled_for TIMESTAMP WITH TIME ZONE,
+        published_at TIMESTAMP WITH TIME ZONE,
+        is_featured BOOLEAN DEFAULT false,
+        read_time VARCHAR(50) DEFAULT '٥ دقائق',
+        views_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS subscribers (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) UNIQUE NOT NULL,
+        subscribed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        is_active BOOLEAN DEFAULT true
+      );
+
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        name VARCHAR(150) NOT NULL,
+        role VARCHAR(50) DEFAULT 'admin',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    isInitialized = true;
+  } catch (err) {
+    console.error('Error initializing local tables:', err);
+  }
+}
+
+let localPgliteClient: PGlite | null = null;
 
 export function getDb() {
   if (dbInstance) return dbInstance;
 
-  if (!connectionString || connectionString.trim() === '') {
-    // Graceful fallback for local development before Supabase URL is set
-    return null;
+  // 1. If remote Supabase DATABASE_URL is provided, use postgres client
+  if (
+    connectionString &&
+    (connectionString.startsWith('postgres://') || connectionString.startsWith('postgresql://'))
+  ) {
+    try {
+      const client = postgres(connectionString, {
+        prepare: false,
+        ssl: connectionString.includes('localhost') ? false : 'require',
+        max: 10,
+      });
+      dbInstance = drizzlePg(client, { schema });
+      return dbInstance;
+    } catch (e) {
+      console.warn('⚠️ تعذر الاتصال بـ Supabase، التحويل تلقائياً لقاعدة البيانات المحلية PGlite');
+    }
   }
 
+  // 2. Otherwise: Use Local PostgreSQL (PGlite)
   try {
-    // Configure postgres client for Supabase connection pooler or direct
-    const client = postgres(connectionString, {
-      prepare: false, // Required for Supabase transaction pooler (port 6543)
-      ssl: connectionString.includes('localhost') ? false : 'require',
-      max: 10,
-    });
-    dbInstance = drizzle(client, { schema });
+    const dataDir = path.resolve(process.cwd(), 'local-data', 'pglite');
+    fs.mkdirSync(dataDir, { recursive: true });
+
+    if (!localPgliteClient) {
+      localPgliteClient = new PGlite(dataDir);
+      initLocalSchema(localPgliteClient);
+    }
+
+    dbInstance = drizzlePglite(localPgliteClient, { schema });
     return dbInstance;
   } catch (error) {
-    console.warn('⚠️ فشل الاتصال بقاعدة بيانات Supabase:', error);
+    console.error('Failed to initialize local PGlite:', error);
     return null;
   }
+}
+
+export function isLocalDatabase(): boolean {
+  return !(
+    connectionString &&
+    (connectionString.startsWith('postgres://') || connectionString.startsWith('postgresql://'))
+  );
 }
 
 export const db = getDb();

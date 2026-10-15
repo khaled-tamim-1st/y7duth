@@ -1,7 +1,8 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import StoryCard from '@/components/StoryCard.astro';
-import { stories, type Story } from '@/data/stories';
+import { getDb, articlesTable } from '@/db';
+import { eq, or, and, lte, ne } from 'drizzle-orm';
 import {
   ArrowRight,
   ArrowLeft,
@@ -14,26 +15,79 @@ import {
   Calendar,
 } from 'lucide-astro';
 
-export const prerender = true;
+const { slug } = Astro.params;
+const db = getDb();
 
-export function getStaticPaths() {
-  return stories.map((story) => ({
-    params: { slug: story.slug },
-    props: { story },
-  }));
-}
-
-interface Props {
-  story: Story;
-}
-
-const { story } = Astro.props;
-
-if (!story) {
+if (!slug || !db) {
   return Astro.redirect('/404');
 }
 
-const relatedStories = stories.filter((s) => s.slug !== story.slug).slice(0, 2);
+const now = new Date();
+const rows = await db
+  .select()
+  .from(articlesTable)
+  .where(
+    and(
+      eq(articlesTable.slug, slug),
+      or(
+        eq(articlesTable.status, 'published'),
+        and(
+          eq(articlesTable.status, 'scheduled'),
+          lte(articlesTable.scheduledFor, now)
+        )
+      )
+    )
+  )
+  .limit(1);
+
+if (rows.length === 0) {
+  return Astro.redirect('/404');
+}
+
+const art = rows[0];
+const story = {
+  slug: art.slug,
+  category: art.category,
+  title: art.title,
+  excerpt: art.excerpt,
+  author: art.authorName,
+  authorRole: art.authorRole,
+  date: new Date(art.publishedAt || art.createdAt).toLocaleDateString('ar-KW', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }),
+  read: art.readTime || '٥ دقائق',
+  image: art.coverImage,
+  location: art.location || 'الكويت',
+  body: art.content.split('\n\n').filter(Boolean),
+};
+
+// Query related stories
+const relatedRows = await db
+  .select()
+  .from(articlesTable)
+  .where(
+    and(
+      ne(articlesTable.id, art.id),
+      eq(articlesTable.status, 'published')
+    )
+  )
+  .limit(2);
+
+const relatedStories = relatedRows.map((r) => ({
+  slug: r.slug,
+  category: r.category as any,
+  title: r.title,
+  excerpt: r.excerpt,
+  author: r.authorName,
+  authorRole: r.authorRole,
+  date: new Date(r.publishedAt || r.createdAt).toLocaleDateString('ar-KW'),
+  read: r.readTime || '٥ دقائق',
+  image: r.coverImage,
+  location: r.location || 'الكويت',
+  body: r.content.split('\n\n').filter(Boolean),
+}));
 ---
 
 <Layout

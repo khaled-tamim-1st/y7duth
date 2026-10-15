@@ -1,6 +1,6 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
-import { getDb, articlesTable, subscribersTable } from '@/db';
+import { getDb, articlesTable, subscribersTable, isLocalDatabase } from '@/db';
 import {
   FileText,
   Clock,
@@ -10,11 +10,12 @@ import {
   PlusCircle,
   ExternalLink,
   Calendar,
-  AlertTriangle,
+  Database,
 } from 'lucide-astro';
 import { desc, count, eq } from 'drizzle-orm';
 
 const db = getDb();
+const isLocal = isLocalDatabase();
 
 let totalArticles = 0;
 let publishedArticles = 0;
@@ -41,14 +42,16 @@ if (db) {
 ---
 
 <DashboardLayout title="نظرة عامة — لوحة تحكم يحدث في الكويت" activeTab="overview">
-  <!-- Supabase Warning Banner if not connected -->
-  {!db && (
-    <div class="mb-8 p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-4">
-      <AlertTriangle class="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+  <!-- Local DB Active Banner -->
+  {isLocal && (
+    <div class="mb-8 p-4.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-4">
+      <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 grid place-items-center flex-shrink-0 mt-0.5">
+        <Database class="w-4 h-4" />
+      </div>
       <div>
-        <h3 class="font-bold text-sm">قاعدة بيانات Supabase غير مربوطة بعد</h3>
-        <p class="text-xs text-amber-700 mt-1 leading-relaxed">
-          يرجى فتح ملف <code class="bg-amber-100 px-2 py-0.5 rounded font-mono font-bold">.env</code> وإضافة رابط اتصال PostgreSQL الخاص بمشروعك في سوبابيس في متغير <code class="bg-amber-100 px-2 py-0.5 rounded font-mono font-bold">DATABASE_URL</code> للبدء في حفظ ونشر المقالات.
+        <h3 class="font-bold text-sm">أنت تعمل حالياً على قاعدة البيانات المحلية (Local PostgreSQL)</h3>
+        <p class="text-xs text-emerald-700 mt-1 leading-relaxed">
+          جميع المقالات، المسودات، والجدولة تُحفظ محلياً على جهازك في مجلد <code class="bg-emerald-100 px-1.5 py-0.5 rounded font-mono font-bold">local-data/</code>. وعندما تصبح جاهزاً للنشر على السيرفر، يمكنك ربط Supabase مباشرة عبر <code class="bg-emerald-100 px-1.5 py-0.5 rounded font-mono font-bold">DATABASE_URL</code> في ملف <code class="bg-emerald-100 px-1.5 py-0.5 rounded font-mono font-bold">.env</code> دون فقدان أي شيء.
         </p>
       </div>
     </div>

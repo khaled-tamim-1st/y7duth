@@ -2,13 +2,57 @@
 import Layout from '@/layouts/Layout.astro';
 import FeaturedStory from '@/components/FeaturedStory.astro';
 import StoryCard from '@/components/StoryCard.astro';
-import { stories, categories } from '@/data/stories';
+import { categories } from '@/data/stories';
+import { getDb, articlesTable } from '@/db';
+import { desc, and, eq, lte, or } from 'drizzle-orm';
 import { ArrowLeft, Search, Quote, Users, MapPin, Anchor, Coffee, Image as ImageIcon, Sparkles } from 'lucide-astro';
 
-const hasStories = stories.length > 0;
-const featuredStory = hasStories ? stories.find((s) => s.featured) || stories[0] : null;
-const editorialPicks = hasStories ? stories.slice(1, 4) : [];
-const allStories = stories;
+const db = getDb();
+let publishedRows: any[] = [];
+
+if (db) {
+  try {
+    const now = new Date();
+    publishedRows = await db
+      .select()
+      .from(articlesTable)
+      .where(
+        or(
+          eq(articlesTable.status, 'published'),
+          and(
+            eq(articlesTable.status, 'scheduled'),
+            lte(articlesTable.scheduledFor, now)
+          )
+        )
+      )
+      .orderBy(desc(articlesTable.createdAt));
+  } catch (e) {
+    console.debug('Home DB query notice:', e);
+  }
+}
+
+const allStories = publishedRows.map((a) => ({
+  slug: a.slug,
+  category: a.category,
+  title: a.title,
+  excerpt: a.excerpt,
+  author: a.authorName,
+  authorRole: a.authorRole,
+  date: new Date(a.publishedAt || a.createdAt).toLocaleDateString('ar-KW', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }),
+  read: a.readTime || '٥ دقائق',
+  image: a.coverImage,
+  location: a.location || 'الكويت',
+  featured: a.isFeatured,
+  body: a.content.split('\n\n').filter(Boolean),
+}));
+
+const hasStories = allStories.length > 0;
+const featuredStory = hasStories ? allStories.find((s) => s.featured) || allStories[0] : null;
+const editorialPicks = hasStories ? allStories.slice(1, 4) : [];
 
 // Categories metadata for presentation
 const categoriesMeta = [
