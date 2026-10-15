@@ -3,11 +3,46 @@ import Layout from '@/layouts/Layout.astro';
 import FeaturedStory from '@/components/FeaturedStory.astro';
 import StoryCard from '@/components/StoryCard.astro';
 import { stories, categories } from '@/data/stories';
-import { ArrowLeft, Search, Quote } from 'lucide-astro';
+import { ArrowLeft, Search, Quote, Users, MapPin, Anchor, Coffee, Image as ImageIcon, Sparkles } from 'lucide-astro';
 
-const featuredStory = stories.find((s) => s.featured) || stories[0];
-const editorialPicks = stories.slice(1, 4);
+const hasStories = stories.length > 0;
+const featuredStory = hasStories ? stories.find((s) => s.featured) || stories[0] : null;
+const editorialPicks = hasStories ? stories.slice(1, 4) : [];
 const allStories = stories;
+
+// Categories metadata for presentation
+const categoriesMeta = [
+  {
+    name: 'أهل الديرة',
+    icon: Users,
+    desc: 'شخصيات ملهمة، رواد، حرفيون، وقصص إنسانية صنعت روح الكويت وتراثها الحي.',
+    color: '#126447',
+  },
+  {
+    name: 'في الفريج',
+    icon: MapPin,
+    desc: 'أسواق قديمة، بيوت تراثية، فرجان عتيقة، ومقاهٍ شعبية تحفظ أصالة المكان.',
+    color: '#cf3935',
+  },
+  {
+    name: 'سوالف وتراث',
+    icon: Anchor,
+    desc: 'حكايات البحر والغوص، عادات البيوت، لهجة ومفردات أهل الكويت، وأمثال الطيبين.',
+    color: '#18323c',
+  },
+  {
+    name: 'سفرة الديرة',
+    icon: Coffee,
+    desc: 'أكلات البيت الكويتي القديم، طقوس الريوق المهيّل، واستكانة الشاي وسفرة البركة.',
+    color: '#c27d38',
+  },
+  {
+    name: 'ألبوم الذاكرة',
+    icon: ImageIcon,
+    desc: 'صور نادرة، وثائق قديمة، وذكريات توثق معالم الكويت وتاريخها الجميل.',
+    color: '#2a5563',
+  },
+];
 ---
 
 <Layout
@@ -20,114 +55,160 @@ const allStories = stories;
       <div>
         <div class="text-[12px] tracking-widest text-[#126447] font-semibold mb-2 flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-[#126447]"></span>
-          المشهد من هنا — العدد ٠٦
+          المشهد من هنا — إصدار توثيقي
         </div>
         <h1 class="text-[36px] md:text-[52px] leading-[1.15] font-extrabold tracking-tight text-[#18323c]">
-          الكويت، كما نعيشها.
+          الكويت، كما نعيشها ونذكرها.
         </h1>
       </div>
-      <p class="max-w-[340px] text-[14px] md:text-[15px] leading-[1.9] text-[#72766f]">
-        مجلة مستقلة تنصت للمدينة، وتكتب عن تفاصيلها الصغيرة التي تصنع حكاية كبيرة.
+      <p class="max-w-[360px] text-[14px] md:text-[15px] leading-[1.9] text-[#72766f]">
+        مجلة مستقلة توثق حكايات أهل الديرة، أسرار الفرجان القديمة، وعَبَق التراث الكويتي الأصيل.
       </p>
     </section>
 
-    <!-- Hero Section: Featured Story & Editorial Desk -->
-    <section class="grid lg:grid-cols-[1.65fr_0.85fr] gap-8 lg:gap-10 py-8 md:py-12">
-      <!-- Main Featured Story -->
-      <FeaturedStory story={featuredStory} />
+    {hasStories ? (
+      <!-- When stories exist: Hero Featured Story & Editorial Desk -->
+      <>
+        <section class="grid lg:grid-cols-[1.65fr_0.85fr] gap-8 lg:gap-10 py-8 md:py-12">
+          {featuredStory && <FeaturedStory story={featuredStory} />}
 
-      <!-- Editorial Desk Sidebar -->
-      <aside class="flex flex-col bg-[#ede7dc]/60 rounded-lg p-6 border border-[#d9d1c2]/60">
-        <div class="flex items-center justify-between pb-4 border-b border-[#d9d1c2]">
-          <h2 class="text-[19px] font-bold text-[#18323c]">على طاولة التحرير</h2>
-          <span class="text-[11px] text-[#8c8980] bg-white/70 px-2.5 py-0.5 rounded-full font-medium">مختاراتنا</span>
-        </div>
-
-        <div class="divide-y divide-[#d9d1c2]/70 flex-1">
-          {editorialPicks.map((story, i) => (
-            <div class="py-4 first:pt-4">
-              <div class="flex items-center gap-2 text-[11px] text-[#126447] mb-2 font-medium">
-                <span class="font-serif text-[16px] text-[#cf3935] font-bold">٠{i + 1}</span>
-                <span>{story.category}</span>
-                <span class="text-[#c8bda9]">·</span>
-                <span class="text-[#8c8980]">{story.location}</span>
-              </div>
-              <StoryCard story={story} compact={true} />
+          <aside class="flex flex-col bg-[#ede7dc]/60 rounded-lg p-6 border border-[#d9d1c2]/60">
+            <div class="flex items-center justify-between pb-4 border-b border-[#d9d1c2]">
+              <h2 class="text-[19px] font-bold text-[#18323c]">على طاولة التحرير</h2>
+              <span class="text-[11px] text-[#8c8980] bg-white/70 px-2.5 py-0.5 rounded-full font-medium">مختاراتنا</span>
             </div>
-          ))}
+
+            <div class="divide-y divide-[#d9d1c2]/70 flex-1">
+              {editorialPicks.map((story, i) => (
+                <div class="py-4 first:pt-4">
+                  <div class="flex items-center gap-2 text-[11px] text-[#126447] mb-2 font-medium">
+                    <span class="font-serif text-[16px] text-[#cf3935] font-bold">٠{i + 1}</span>
+                    <span>{story.category}</span>
+                    <span class="text-[#c8bda9]">·</span>
+                    <span class="text-[#8c8980]">{story.location}</span>
+                  </div>
+                  <StoryCard story={story} compact={true} />
+                </div>
+              ))}
+            </div>
+
+            <a
+              href="#كل-الحكايات"
+              class="mt-4 pt-4 border-t border-[#d9d1c2]/60 flex items-center justify-between text-[13px] font-semibold text-[#126447] hover:text-[#0e5038] group"
+            >
+              <span>تصفح جميع الحكايات</span>
+              <ArrowLeft class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+            </a>
+          </aside>
+        </section>
+
+        <!-- Category Filter Bar -->
+        <section class="border-y border-[#d9d1c2] py-4 my-2 flex items-center gap-4 overflow-x-auto" aria-label="اختيار فئة">
+          <span class="text-[12px] font-semibold text-[#8c8980] whitespace-nowrap">
+            أقسام المجلة:
+          </span>
+          <div class="flex items-center gap-2 min-w-max" id="category-filter-buttons">
+            {categories.map((c) => (
+              <button
+                type="button"
+                class={`category-tab-btn rounded-full px-4 py-2 text-[13px] font-medium transition-all ${
+                  c === 'الكل'
+                    ? 'bg-[#18323c] text-[#f4f0e7] shadow-sm active-tab'
+                    : 'bg-transparent text-[#546267] hover:bg-[#e8e1d4]'
+                }`}
+                data-category={c}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <!-- Stories Grid -->
+        <section id="كل-الحكايات" class="pt-10 pb-16 scroll-mt-24">
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+            {allStories.map((story) => (
+              <StoryCard story={story} />
+            ))}
+          </div>
+        </section>
+      </>
+    ) : (
+      <!-- Empty State: Ready for real articles with 5 Categories Presentation -->
+      <section class="py-12 md:py-16">
+        <!-- Coming Soon Editorial Card -->
+        <div class="relative bg-gradient-to-br from-[#18323c] to-[#254652] text-[#f4f0e7] rounded-3xl p-8 md:p-14 overflow-hidden shadow-xl mb-14 border border-[#2b4c59]">
+          <div class="absolute -left-12 -bottom-12 w-80 h-80 rounded-full bg-[#126447]/20 blur-3xl pointer-events-none"></div>
+          <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-[#b8d3c2] text-xs font-semibold mb-6">
+              <Sparkles class="w-3.5 h-3.5" />
+              <span>مساحة توثيقية قيد التحضير</span>
+            </div>
+            <h2 class="text-[30px] md:text-[44px] font-bold leading-[1.25] text-white">
+              نجهّز لكم حكايات تليق بالكويت وأهلها.
+            </h2>
+            <p class="text-[15px] md:text-[17px] text-white/80 leading-[1.9] mt-4">
+              أفرغنا المدونة من المقالات التجريبية، لنبدأ معكم مرحلة النشر الحقيقي؛ نوثق سِيَر الشخصيات الملهمة، نفتح أبواب البيوت والفرجان القديمة، ونعيد رواية سوالف البحر والتراث الكويتي الأصيل.
+            </p>
+            <div class="mt-8 flex flex-wrap items-center gap-4">
+              <a
+                href="#النشرة"
+                class="inline-flex items-center gap-2 bg-[#126447] hover:bg-[#0e5038] text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg hover:shadow transition-all"
+              >
+                <span>اشترك ليصلك أول مقال</span>
+                <ArrowLeft class="w-4 h-4" />
+              </a>
+              <a
+                href="#أقسام-المجلة"
+                class="inline-flex items-center gap-2 text-white/80 hover:text-white px-4 py-3 text-sm font-medium transition-colors"
+              >
+                <span>استكشف أقسام المجلة الخمسة ↓</span>
+              </a>
+            </div>
+          </div>
         </div>
 
-        <a
-          href="#كل-الحكايات"
-          class="mt-4 pt-4 border-t border-[#d9d1c2]/60 flex items-center justify-between text-[13px] font-semibold text-[#126447] hover:text-[#0e5038] group"
-        >
-          <span>تصفح جميع الحكايات</span>
-          <ArrowLeft class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-        </a>
-      </aside>
-    </section>
-
-    <!-- Mood / Category Filter Bar -->
-    <section class="border-y border-[#d9d1c2] py-4 my-2 flex items-center gap-4 overflow-x-auto" aria-label="اختيار فئة">
-      <span class="text-[12px] font-semibold text-[#8c8980] whitespace-nowrap">
-        اقرأ حسب المزاج:
-      </span>
-      <div class="flex items-center gap-2 min-w-max" id="category-filter-buttons">
-        {categories.map((c) => (
-          <button
-            type="button"
-            class={`category-tab-btn rounded-full px-4 py-2 text-[13px] font-medium transition-all ${
-              c === 'الكل'
-                ? 'bg-[#18323c] text-[#f4f0e7] shadow-sm active-tab'
-                : 'bg-transparent text-[#546267] hover:bg-[#e8e1d4]'
-            }`}
-            data-category={c}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
-    </section>
-
-    <!-- All Stories Grid Section -->
-    <section id="كل-الحكايات" class="pt-10 pb-16 scroll-mt-24">
-      <div class="flex items-end justify-between gap-4 mb-8">
-        <div>
-          <div class="text-[12px] tracking-wider text-[#126447] font-semibold mb-1">
-            من المدينة وأهلها
+        <!-- 5 Core Categories Showcase -->
+        <div id="أقسام-المجلة" class="scroll-mt-20">
+          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8 pb-4 border-b border-[#d9d1c2]">
+            <div>
+              <span class="text-[12px] font-semibold text-[#126447] tracking-wider uppercase">محاور المجلة</span>
+              <h3 class="text-[24px] md:text-[32px] font-bold text-[#18323c] mt-1">خماسية «يحدث في الكويت»</h3>
+            </div>
+            <span class="text-xs text-[#8c8980]">التصنيفات المعتمدة للمقالات القادمة</span>
           </div>
-          <h2 id="stories-section-title" class="text-[28px] md:text-[38px] font-bold text-[#18323c]">
-            حكايات تستحق الوقوف
-          </h2>
+
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categoriesMeta.map((cat, idx) => {
+              const IconComp = cat.icon;
+              return (
+                <a
+                  href={`/category/${encodeURIComponent(cat.name)}`}
+                  class="group block bg-[#ede7dc]/70 hover:bg-white p-7 rounded-2xl border border-[#d9d1c2] hover:border-[#126447] shadow-sm hover:shadow-md transition-all text-right no-underline"
+                >
+                  <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-white group-hover:bg-[#f4f0e7] grid place-items-center text-[#18323c] border border-[#d9d1c2] transition-colors shadow-xs">
+                      <IconComp class="w-6 h-6" style={`color: ${cat.color};`} />
+                    </div>
+                    <span class="text-xs font-serif font-bold text-[#8c8980]">٠{idx + 1}</span>
+                  </div>
+                  <h4 class="text-[20px] font-bold text-[#18323c] group-hover:text-[#126447] transition-colors">
+                    {cat.name}
+                  </h4>
+                  <p class="text-[13px] text-[#6a7576] leading-[1.8] mt-2.5">
+                    {cat.desc}
+                  </p>
+                  <div class="mt-5 flex items-center gap-1.5 text-xs font-semibold text-[#126447]">
+                    <span>تصفح القسم</span>
+                    <span class="transition-transform group-hover:-translate-x-1">←</span>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
         </div>
-        <span id="stories-count" class="text-[13px] text-[#8c8980] font-medium">
-          {allStories.length} حكايات
-        </span>
-      </div>
-
-      <!-- Stories Grid -->
-      <div id="stories-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-        {allStories.map((story) => (
-          <div class="story-item transition-all duration-300" data-story-category={story.category}>
-            <StoryCard story={story} />
-          </div>
-        ))}
-      </div>
-
-      <!-- Empty State -->
-      <div id="no-stories-msg" class="hidden py-16 text-center border-2 border-dashed border-[#c9c1b3] rounded-xl my-6">
-        <Search class="w-8 h-8 mx-auto mb-3 text-[#126447]" />
-        <h3 class="font-bold text-lg text-[#18323c]">لا توجد حكايات في هذا التصنيف حاليًا</h3>
-        <p class="text-sm text-[#777b74] mt-1.5">اختر فئة أخرى أو اعرض كل الحكايات.</p>
-        <button
-          type="button"
-          id="reset-filter-btn"
-          class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#126447] underline underline-offset-4"
-        >
-          عرض كل الحكايات
-        </button>
-      </div>
-    </section>
+      </section>
+    )}
 
     <!-- Editorial Quote Section -->
     <section class="grid md:grid-cols-[0.9fr_1.1fr] my-12 bg-[#e8e1d4] rounded-2xl overflow-hidden shadow-sm border border-[#d9d1c2]/70">
@@ -149,17 +230,8 @@ const allStories = stories;
           «الأماكن ما تعيش بحيطانها، تعيش بالناس اللي يردّون لها.»
         </blockquote>
         <span class="text-[13px] text-[#7e7c73] mt-3">
-          من حكاية عن سوق المباركية — صيف ٢٠٢٥
+          من دفتر حكايات أهل الكويت
         </span>
-        <div class="mt-6">
-          <a
-            href={`/story/${featuredStory.slug}`}
-            class="inline-flex items-center gap-2 text-[14px] font-semibold text-[#126447] hover:text-[#0e5038] group"
-          >
-            <span>اقرأ الحكاية كاملة</span>
-            <ArrowLeft class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-          </a>
-        </div>
       </div>
     </section>
 
@@ -173,76 +245,17 @@ const allStories = stories;
           ليش نكتب؟
         </span>
         <h2 class="text-[32px] md:text-[44px] font-bold leading-[1.3] text-[#18323c] mt-2.5">
-          لأن كل شارع<br />عنده سالفة.
+          لأن كل فريج وشارع<br />عنده سالفة وإنسان.
         </h2>
       </div>
       <div class="space-y-4 text-[15px] md:text-[16px] leading-[2.1] text-[#55656b]">
         <p>
-          «يحدث في الكويت» مساحة ثقافية وتوثيقية مستقلة تلتقط تفاصيل الحياة اليومية وهي تمشي. نكتب عن الأماكن التي نرجع لها مرارًا، والناس الذين يمنحون المدينة دفئها، والطقوس التي قد تعبر بنا دون أن ننتبه لجمالها.
+          «يحدث في الكويت» مساحة توثيقية مستقلة تروي حكايات المكان وأهله. نكتب عن رواد صنعوا بجهدهم ملامح الديرة، وعن فرجان قديمة وبراحات لا تزال تتنفس ذكريات الطين والبحر، وعن سوالف وتراث وأكلات ارتبطت في ذاكرتنا بالبركة والجمعة الطيبة.
         </p>
         <p>
-          حكاياتنا تنطلق من الذاكرة، تمر بالأسواق والمقاهي والشواطئ، وتستقر في بيوت الكويت بكل بساطتها وألفتها.
+          هدفنا أن نحفظ هذه الحكايات بأناقة، مكتوبةً ومصوّرةً، لتبقى حية في ذاكرة الأجيال القادمة.
         </p>
       </div>
     </section>
   </div>
 </Layout>
-
-<script>
-  // Client-side category filtering
-  const buttons = document.querySelectorAll<HTMLButtonElement>('.category-tab-btn');
-  const items = document.querySelectorAll<HTMLElement>('.story-item');
-  const sectionTitle = document.getElementById('stories-section-title');
-  const storiesCount = document.getElementById('stories-count');
-  const noStoriesMsg = document.getElementById('no-stories-msg');
-  const resetBtn = document.getElementById('reset-filter-btn');
-
-  function filterCategory(cat: string) {
-    buttons.forEach((btn) => {
-      const match = btn.getAttribute('data-category') === cat;
-      if (match) {
-        btn.className = 'category-tab-btn rounded-full px-4 py-2 text-[13px] font-medium transition-all bg-[#18323c] text-[#f4f0e7] shadow-sm active-tab';
-      } else {
-        btn.className = 'category-tab-btn rounded-full px-4 py-2 text-[13px] font-medium transition-all bg-transparent text-[#546267] hover:bg-[#e8e1d4]';
-      }
-    });
-
-    let visibleCount = 0;
-    items.forEach((item) => {
-      const itemCat = item.getAttribute('data-story-category');
-      if (cat === 'الكل' || itemCat === cat) {
-        item.style.display = '';
-        visibleCount++;
-      } else {
-        item.style.display = 'none';
-      }
-    });
-
-    if (sectionTitle) {
-      sectionTitle.textContent = cat === 'الكل' ? 'حكايات تستحق الوقوف' : `حكايات ${cat}`;
-    }
-
-    if (storiesCount) {
-      storiesCount.textContent = `${visibleCount} حكايات`;
-    }
-
-    if (noStoriesMsg) {
-      if (visibleCount === 0) {
-        noStoriesMsg.classList.remove('hidden');
-      } else {
-        noStoriesMsg.classList.add('hidden');
-      }
-    }
-  }
-
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const cat = btn.getAttribute('data-category') || 'الكل';
-      filterCategory(cat);
-    });
-  });
-
-  resetBtn?.addEventListener('click', () => {
-    filterCategory('الكل');
-  });
-</script>

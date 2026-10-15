@@ -2,7 +2,7 @@
 import Layout from '@/layouts/Layout.astro';
 import StoryCard from '@/components/StoryCard.astro';
 import { stories, categories, type Category } from '@/data/stories';
-import { ArrowRight, Tag } from 'lucide-astro';
+import { ArrowRight, Tag, BookOpen, Clock } from 'lucide-astro';
 
 export function getStaticPaths() {
   const validCategories = categories.filter((c) => c !== 'الكل');
@@ -19,12 +19,11 @@ interface Props {
 const { category } = Astro.props;
 
 const categoryDescriptions: Record<string, string> = {
-  أماكن: 'شوارع، أسواق، وزوايا قديمة لا تفقد روحها مع الزمن.',
-  حكايات: 'تفاصيل إنسانية من الفرجان وعابري اليوم في الكويت.',
-  مذاق: 'عادات المائدة، مطابخ البيوت، ومذاقات تحكي أصل المكان.',
-  ذاكرة: 'البحر، السفر، وأيام عاشت في كلام الأجداد ونصوصهم.',
-  ثقافة: 'الفنون، الموسيقى، المعارض، وإبداعات تصنع مشهد اليوم.',
-  يوميات: 'مشاهد سريعة وإيقاعات يومية تميز المشهد الكويتي.',
+  'أهل الديرة': 'شخصيات ملهمة، رواد، حرفيون، وقصص إنسانية صنعت روح الكويت وتراثها الحي.',
+  'في الفريج': 'أسواق قديمة، بيوت تراثية، فرجان عتيقة، ومقاهٍ شعبية تحفظ أصالة المكان.',
+  'سوالف وتراث': 'حكايات البحر والغوص، عادات البيوت، لهجة ومفردات أهل الكويت، وأمثال الطيبين.',
+  'سفرة الديرة': 'أكلات البيت الكويتي القديم، طقوس الريوق المهيّل، واستكانة الشاي وسفرة البركة.',
+  'ألبوم الذاكرة': 'صور نادرة، وثائق قديمة، وذكريات توثق معالم الكويت وتاريخها الجميل.',
 };
 
 const categoryStories = stories.filter((s) => s.category === category);
@@ -54,19 +53,19 @@ const desc = categoryDescriptions[category] || `جميع الحكايات وال
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 class="text-[34px] md:text-[48px] font-bold text-[#18323c] tracking-tight">
-            حكايات {category}
+            {category}
           </h1>
-          <p class="text-[16px] text-[#637172] mt-2 max-w-[600px] leading-relaxed">
+          <p class="text-[16px] text-[#637172] mt-2 max-w-[650px] leading-relaxed">
             {desc}
           </p>
         </div>
         <span class="text-[13px] text-[#8c8980] bg-white/70 px-3.5 py-1.5 rounded-full border border-[#d9d1c2] font-medium">
-          {categoryStories.length} حكايات مسجلة
+          {categoryStories.length} حكايات منشورة
         </span>
       </div>
     </div>
 
-    <!-- Stories Grid -->
+    <!-- Stories Grid or Empty State -->
     {categoryStories.length > 0 ? (
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
         {categoryStories.map((story) => (
@@ -74,11 +73,28 @@ const desc = categoryDescriptions[category] || `جميع الحكايات وال
         ))}
       </div>
     ) : (
-      <div class="py-20 text-center border-2 border-dashed border-[#c9c1b3] rounded-2xl">
-        <p class="text-lg font-semibold text-[#18323c]">لا توجد حكايات منشورة في هذا التصنيف حاليًا</p>
-        <a href="/" class="mt-4 inline-block text-[#126447] underline underline-offset-4 font-medium">
-          العودة لكل الحكايات
-        </a>
+      <div class="py-20 px-6 text-center border-2 border-dashed border-[#c9c1b3] rounded-2xl bg-white/40 max-w-2xl mx-auto my-6">
+        <div class="w-14 h-14 rounded-full bg-[#e8e1d4] text-[#126447] grid place-items-center mx-auto mb-4">
+          <BookOpen class="w-7 h-7" />
+        </div>
+        <h3 class="text-xl font-bold text-[#18323c]">حكايات «{category}» قيد الإعداد</h3>
+        <p class="text-sm text-[#777b74] mt-2 max-w-md mx-auto leading-relaxed">
+          نعمل حالياً على كتابة وتوثيق حكايات مميزة لهذا القسم. اشترك في رسالتنا الأسبوعية لتكون أول من يقرأها فور نشرها.
+        </p>
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <a
+            href="/#النشرة"
+            class="bg-[#126447] hover:bg-[#0e5038] text-white text-xs font-semibold px-5 py-2.5 rounded-full transition-all"
+          >
+            اشترك في رسالتنا
+          </a>
+          <a
+            href="/"
+            class="text-[#18323c] hover:text-[#126447] text-xs font-semibold px-4 py-2.5 underline underline-offset-4"
+          >
+            العودة للرئيسية
+          </a>
+        </div>
       </div>
     )}
   </div>
