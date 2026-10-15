@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "يحدث في الكويت"
+description = "مدونة تحريرية عربية تستكشف الأخبار والقصص والثقافة والحياة اليومية في الكويت، بتجربة قراءة مصممة من اليمين إلى اليسار."
+version = "1.0.0"
+id = "artifacts/kuwait-happening"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24622
+
+[services.development]
+run = "pnpm --filter @workspace/kuwait-happening run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/kuwait-happening", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/kuwait-happening/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24622"
+BASE_PATH = "/"
