@@ -3,17 +3,67 @@ import { categories } from '@/data/stories';
 import { Search, Menu, X } from 'lucide-astro';
 
 const navCategories = categories.filter((c) => c !== 'الكل');
+
+// Initial server-side Kuwait Date & Time (SSR / Pre-render)
+const now = new Date();
+const initialDate = new Intl.DateTimeFormat('ar-KW', {
+  timeZone: 'Asia/Kuwait',
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+}).format(now);
+
+const initialTime = new Intl.DateTimeFormat('ar-KW', {
+  timeZone: 'Asia/Kuwait',
+  hour: 'numeric',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: true,
+}).format(now);
 ---
 
-<!-- Top Date & Weather Ribbon -->
+<!-- Top Date, Clock & Weather Ribbon -->
 <div class="bg-[#18323c] text-[#f5f0e6] text-[11px] md:text-xs border-b border-[#24424e]">
-  <div class="max-w-[1320px] mx-auto px-5 md:px-10 h-9 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <span class="tracking-wide">الأربعاء، ١٨ يونيو ٢٠٢٥</span>
-      <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#cf3935]"></span>
-      <span class="text-white/80">الكويت ٣٨°</span>
+  <div class="max-w-[1320px] mx-auto px-5 md:px-10 min-h-9 py-1 flex flex-wrap items-center justify-between gap-y-1 gap-x-4">
+    <!-- Live Kuwait Indicators (Date, Clock, Weather) -->
+    <div class="flex items-center flex-wrap gap-2 md:gap-3">
+      <!-- Live Date -->
+      <span id="kuwait-live-date" class="tracking-wide font-medium flex items-center gap-1.5" title="تاريخ اليوم في الكويت">
+        <span class="date-text">{initialDate}</span>
+      </span>
+
+      <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#cf3935]" aria-hidden="true"></span>
+
+      <!-- Live Clock -->
+      <span
+        id="kuwait-live-time"
+        class="tracking-wide font-medium text-[#b8d3c2] flex items-center gap-1.5"
+        title="توقيت الكويت الحي"
+      >
+        <span class="inline-block w-2 h-2 rounded-full bg-[#126447] animate-pulse" aria-hidden="true"></span>
+        <span class="time-text font-mono font-semibold">{initialTime}</span>
+        <span class="text-[10px] text-white/60 hidden sm:inline">توقيت الكويت</span>
+      </span>
+
+      <span class="inline-block w-1 h-1 rounded-full bg-white/30 hidden sm:inline-block" aria-hidden="true"></span>
+
+      <!-- Live Weather -->
+      <span
+        id="kuwait-live-temp"
+        class="tracking-wide font-medium flex items-center gap-1.5 text-white/90"
+        title="الطقس ودرجة الحرارة في مدينة الكويت الآن"
+      >
+        <span class="weather-icon text-xs">☀️</span>
+        <span class="temp-text">الكويت ٣٩°م</span>
+        <span class="weather-condition text-white/60 text-[10px] hidden md:inline">صافٍ</span>
+      </span>
     </div>
-    <span class="hidden sm:block text-white/60 font-light">حكايات من هنا، تُروى كما هي</span>
+
+    <!-- Magazine Slogan -->
+    <div class="hidden sm:flex items-center gap-2 text-white/60 font-light text-[11px]">
+      <span>حكايات من هنا، تُروى كما هي</span>
+    </div>
   </div>
 </div>
 
@@ -126,6 +176,7 @@ const navCategories = categories.filter((c) => c !== 'الكل');
 </header>
 
 <script>
+  // Mobile Menu Logic
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
   const mobileMenu = document.getElementById('mobile-menu');
   const openIcon = mobileMenuBtn?.querySelector('.menu-open-icon');
@@ -137,7 +188,6 @@ const navCategories = categories.filter((c) => c !== 'الكل');
     closeIcon?.classList.toggle('hidden', !isExpanded);
   });
 
-  // Close mobile menu on link click
   mobileMenu?.querySelectorAll('a').forEach((link) => {
     link.addEventListener('click', () => {
       mobileMenu.classList.add('hidden');
@@ -145,4 +195,125 @@ const navCategories = categories.filter((c) => c !== 'الكل');
       closeIcon?.classList.add('hidden');
     });
   });
+
+  // --- Real-time Kuwait Clock & Date Synchronization ---
+  const dateText = document.querySelector('#kuwait-live-date .date-text');
+  const timeText = document.querySelector('#kuwait-live-time .time-text');
+
+  function tickKuwaitTime() {
+    const now = new Date();
+
+    // Live Date (formatted in Arabic with Kuwait timezone)
+    const formattedDate = new Intl.DateTimeFormat('ar-KW', {
+      timeZone: 'Asia/Kuwait',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(now);
+
+    // Live Time (formatted with seconds & Kuwait timezone)
+    const formattedTime = new Intl.DateTimeFormat('ar-KW', {
+      timeZone: 'Asia/Kuwait',
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(now);
+
+    if (dateText && dateText.textContent !== formattedDate) {
+      dateText.textContent = formattedDate;
+    }
+    if (timeText) {
+      timeText.textContent = formattedTime;
+    }
+  }
+
+  // Run immediately and update every second
+  tickKuwaitTime();
+  setInterval(tickKuwaitTime, 1000);
+
+  // --- Real-time Kuwait Weather & Temperature Synchronization ---
+  const tempText = document.querySelector('#kuwait-live-temp .temp-text');
+  const weatherIcon = document.querySelector('#kuwait-live-temp .weather-icon');
+  const weatherCondition = document.querySelector('#kuwait-live-temp .weather-condition');
+
+  interface CachedWeather {
+    tempC: number;
+    code: number;
+    timestamp: number;
+  }
+
+  function applyWeatherDisplay(tempC: number, code: number) {
+    const arabicTemp = new Intl.NumberFormat('ar-KW').format(tempC);
+    if (tempText) tempText.textContent = `الكويت ${arabicTemp}°م`;
+
+    let icon = '☀️';
+    let cond = 'مشمس';
+
+    if (code === 0) {
+      icon = '☀️';
+      cond = 'صافٍ';
+    } else if (code >= 1 && code <= 3) {
+      icon = '🌤️';
+      cond = 'غائم جزئيًا';
+    } else if (code === 45 || code === 48) {
+      icon = '🌫️';
+      cond = 'ضباب';
+    } else if (code >= 51 && code <= 67) {
+      icon = '🌧️';
+      cond = 'ممطر';
+    } else if (code >= 80 && code <= 82) {
+      icon = '🌦️';
+      cond = 'زخات مطر';
+    } else if (code >= 95) {
+      icon = '⛈️';
+      cond = 'عواصف رعدية';
+    }
+
+    if (weatherIcon) weatherIcon.textContent = icon;
+    if (weatherCondition) weatherCondition.textContent = cond;
+  }
+
+  async function syncKuwaitWeather() {
+    try {
+      // Check cache for 15 minutes validity
+      const cachedStr = sessionStorage.getItem('kuwait_weather');
+      if (cachedStr) {
+        try {
+          const cached: CachedWeather = JSON.parse(cachedStr);
+          if (Date.now() - cached.timestamp < 15 * 60 * 1000) {
+            applyWeatherDisplay(cached.tempC, cached.code);
+            return;
+          }
+        } catch {
+          sessionStorage.removeItem('kuwait_weather');
+        }
+      }
+
+      // Fetch live temperature from Open-Meteo for Kuwait City
+      const res = await fetch(
+        'https://api.open-meteo.com/v1/forecast?latitude=29.3759&longitude=47.9774&current=temperature_2m,weather_code&timezone=Asia%2FKuwait'
+      );
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (data?.current?.temperature_2m !== undefined) {
+        const tempC = Math.round(data.current.temperature_2m);
+        const code = Number(data.current.weather_code ?? 0);
+
+        sessionStorage.setItem(
+          'kuwait_weather',
+          JSON.stringify({ tempC, code, timestamp: Date.now() })
+        );
+        applyWeatherDisplay(tempC, code);
+      }
+    } catch (e) {
+      console.debug('Kuwait weather sync notice:', e);
+    }
+  }
+
+  // Sync weather on load and refresh every 15 minutes
+  syncKuwaitWeather();
+  setInterval(syncKuwaitWeather, 15 * 60 * 1000);
 </script>
