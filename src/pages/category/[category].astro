@@ -4,6 +4,8 @@ import StoryCard from '@/components/StoryCard.astro';
 import { stories, categories, type Category } from '@/data/stories';
 import { ArrowRight, Tag, BookOpen, Clock } from 'lucide-astro';
 
+export const prerender = true;
+
 export function getStaticPaths() {
   const validCategories = categories.filter((c) => c !== 'الكل');
   return validCategories.map((cat) => ({

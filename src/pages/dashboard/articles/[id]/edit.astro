@@ -1,0 +1,341 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { getDb, articlesTable } from '@/db';
+import { categories } from '@/data/stories';
+import { eq } from 'drizzle-orm';
+import {
+  Save,
+  Clock,
+  Calendar,
+  Image,
+  Tag,
+  MapPin,
+  User,
+  ArrowRight,
+  Sparkles,
+} from 'lucide-astro';
+
+const { id } = Astro.params;
+const db = getDb();
+
+if (!id || !db) {
+  return Astro.redirect('/dashboard/articles');
+}
+
+const articles = await db.select().from(articlesTable).where(eq(articlesTable.id, id)).limit(1);
+if (articles.length === 0) {
+  return Astro.redirect('/dashboard/articles');
+}
+
+const article = articles[0];
+const availableCategories = categories.filter((c) => c !== 'الكل');
+
+// Format ISO date for datetime-local input
+const scheduledValue = article.scheduledFor
+  ? new Date(article.scheduledFor).toISOString().slice(0, 16)
+  : '';
+---
+
+<DashboardLayout title={`تعديل: ${article.title} — يحدث في الكويت`} activeTab="articles">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-4 mb-8">
+      <div>
+        <a
+          href="/dashboard/articles"
+          class="inline-flex items-center gap-1.5 text-xs text-[#627072] hover:text-[#126447] mb-2"
+        >
+          <ArrowRight class="w-3.5 h-3.5" />
+          <span>العودة لإدارة المقالات</span>
+        </a>
+        <h2 class="text-2xl font-bold text-[#18323c]">تعديل المقال</h2>
+        <p class="text-xs text-[#777b74] mt-1 font-mono">
+          Slug: {article.slug}
+        </p>
+      </div>
+    </div>
+
+    <!-- Edit Form -->
+    <form id="edit-article-form" data-id={article.id} class="space-y-6">
+      <div class="bg-white p-6 md:p-8 rounded-3xl border border-[#d9d1c2] shadow-xs space-y-6">
+        <!-- Title -->
+        <div>
+          <label for="title" class="block text-xs font-bold text-[#18323c] mb-2">
+            عنوان المقال *
+          </label>
+          <input
+            id="title"
+            name="title"
+            type="text"
+            required
+            value={article.title}
+            class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-base md:text-lg font-bold text-[#18323c]"
+          />
+        </div>
+
+        <!-- Category & Location Grid -->
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label for="category" class="block text-xs font-bold text-[#18323c] mb-2">
+              التصنيف المعتمد *
+            </label>
+            <div class="relative">
+              <select
+                id="category"
+                name="category"
+                required
+                class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm font-semibold text-[#18323c] appearance-none cursor-pointer"
+              >
+                {availableCategories.map((cat) => (
+                  <option value={cat} selected={cat === article.category}>{cat}</option>
+                ))}
+              </select>
+              <Tag class="w-4 h-4 text-[#8c8980] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+
+          <div>
+            <label for="location" class="block text-xs font-bold text-[#18323c] mb-2">
+              المكان أو الفريج
+            </label>
+            <div class="relative">
+              <input
+                id="location"
+                name="location"
+                type="text"
+                value={article.location || ''}
+                class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm text-[#18323c]"
+              />
+              <MapPin class="w-4 h-4 text-[#8c8980] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Author Name & Role Grid -->
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label for="authorName" class="block text-xs font-bold text-[#18323c] mb-2">
+              اسم الكاتب *
+            </label>
+            <div class="relative">
+              <input
+                id="authorName"
+                name="authorName"
+                type="text"
+                required
+                value={article.authorName}
+                class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm text-[#18323c]"
+              />
+              <User class="w-4 h-4 text-[#8c8980] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            </div>
+          </div>
+
+          <div>
+            <label for="authorRole" class="block text-xs font-bold text-[#18323c] mb-2">
+              صفة الكاتب
+            </label>
+            <input
+              id="authorRole"
+              name="authorRole"
+              type="text"
+              value={article.authorRole || ''}
+              class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm text-[#18323c]"
+            />
+          </div>
+        </div>
+
+        <!-- Cover Image URL -->
+        <div>
+          <label for="coverImage" class="block text-xs font-bold text-[#18323c] mb-2">
+            رابط الصورة الرئيسية *
+          </label>
+          <div class="relative">
+            <input
+              id="coverImage"
+              name="coverImage"
+              type="text"
+              required
+              value={article.coverImage}
+              class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm text-[#18323c]"
+            />
+            <Image class="w-4 h-4 text-[#8c8980] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          </div>
+        </div>
+
+        <!-- Excerpt -->
+        <div>
+          <label for="excerpt" class="block text-xs font-bold text-[#18323c] mb-2">
+            مقدمة المقال (المقتطف) *
+          </label>
+          <textarea
+            id="excerpt"
+            name="excerpt"
+            required
+            rows="2"
+            class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl p-4 text-sm text-[#18323c]"
+          >{article.excerpt}</textarea>
+        </div>
+
+        <!-- Main Content -->
+        <div>
+          <label for="content" class="block text-xs font-bold text-[#18323c] mb-2">
+            نص المقال الكامل *
+          </label>
+          <textarea
+            id="content"
+            name="content"
+            required
+            rows="10"
+            class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl p-4 text-base text-[#18323c] leading-relaxed"
+          >{article.content}</textarea>
+        </div>
+      </div>
+
+      <!-- Publishing & Scheduling Options -->
+      <div class="bg-white p-6 md:p-8 rounded-3xl border border-[#d9d1c2] shadow-xs space-y-5">
+        <h3 class="font-bold text-sm text-[#18323c] flex items-center gap-2">
+          <Clock class="w-4 h-4 text-[#126447]" />
+          <span>حالة النشر والجدولة</span>
+        </h3>
+
+        <!-- Status Radios -->
+        <div class="grid sm:grid-cols-3 gap-3">
+          <label class="flex items-center gap-3 p-4 rounded-xl border border-[#d9d1c2] cursor-pointer hover:bg-[#f8f6f2] transition-colors has-[:checked]:border-[#126447] has-[:checked]:bg-green-50/50">
+            <input type="radio" name="status" value="published" checked={article.status === 'published'} class="text-[#126447]" />
+            <div>
+              <span class="block text-xs font-bold text-[#18323c]">منشور</span>
+              <span class="block text-[10px] text-[#8c8980]">متاح للقراء حالياً</span>
+            </div>
+          </label>
+
+          <label class="flex items-center gap-3 p-4 rounded-xl border border-[#d9d1c2] cursor-pointer hover:bg-[#f8f6f2] transition-colors has-[:checked]:border-[#126447] has-[:checked]:bg-blue-50/50">
+            <input type="radio" name="status" value="scheduled" checked={article.status === 'scheduled'} class="text-[#126447]" />
+            <div>
+              <span class="block text-xs font-bold text-[#18323c]">مجدول</span>
+              <span class="block text-[10px] text-[#8c8980]">تحديد موعد نشر آلي</span>
+            </div>
+          </label>
+
+          <label class="flex items-center gap-3 p-4 rounded-xl border border-[#d9d1c2] cursor-pointer hover:bg-[#f8f6f2] transition-colors has-[:checked]:border-[#126447] has-[:checked]:bg-amber-50/50">
+            <input type="radio" name="status" value="draft" checked={article.status === 'draft'} class="text-[#126447]" />
+            <div>
+              <span class="block text-xs font-bold text-[#18323c]">مسودة</span>
+              <span class="block text-[10px] text-[#8c8980]">قيد الإعداد</span>
+            </div>
+          </label>
+        </div>
+
+        <!-- Scheduling Datetime Picker -->
+        <div id="schedule-picker-container" class={article.status === 'scheduled' ? 'p-4 rounded-xl bg-blue-50/60 border border-blue-200' : 'hidden p-4 rounded-xl bg-blue-50/60 border border-blue-200'}>
+          <label for="scheduledFor" class="block text-xs font-bold text-blue-900 mb-1.5 flex items-center gap-1.5">
+            <Calendar class="w-4 h-4 text-blue-700" />
+            <span>تاريخ ووقت النشر المجدول</span>
+          </label>
+          <input
+            id="scheduledFor"
+            name="scheduledFor"
+            type="datetime-local"
+            value={scheduledValue}
+            class="bg-white border border-blue-300 focus:border-[#126447] focus:outline-none rounded-lg px-4 py-2 text-sm text-[#18323c]"
+          />
+        </div>
+
+        <!-- Featured Checkbox -->
+        <div class="pt-2">
+          <label class="inline-flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              id="isFeatured"
+              name="isFeatured"
+              checked={article.isFeatured}
+              class="rounded text-[#126447] focus:ring-[#126447] w-4 h-4"
+            />
+            <span class="text-xs font-semibold text-[#18323c] flex items-center gap-1">
+              <Sparkles class="w-3.5 h-3.5 text-[#cf3935]" />
+              <span>تمييز المقال كـ «حكاية هذا الأسبوع» في الواجهة الرئيسية</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <a
+          href="/dashboard/articles"
+          class="px-5 py-3 rounded-xl border border-[#d9d1c2] text-xs font-semibold text-[#627072] hover:bg-gray-100 transition-colors"
+        >
+          إلغاء
+        </a>
+        <button
+          type="submit"
+          id="update-article-btn"
+          class="bg-[#126447] hover:bg-[#0e5038] text-white px-8 py-3.5 rounded-xl text-sm font-semibold shadow-md transition-all flex items-center gap-2"
+        >
+          <Save class="w-4 h-4" />
+          <span>تحديث المقال</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('edit-article-form') as HTMLFormElement;
+    const saveBtn = document.getElementById('update-article-btn') as HTMLButtonElement;
+    const statusRadios = document.querySelectorAll('input[name="status"]');
+    const schedulePicker = document.getElementById('schedule-picker-container');
+    const articleId = form?.getAttribute('data-id');
+
+    statusRadios.forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        const val = (e.target as HTMLInputElement).value;
+        if (val === 'scheduled') {
+          schedulePicker?.classList.remove('hidden');
+        } else {
+          schedulePicker?.classList.add('hidden');
+        }
+      });
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span>جاري التحديث في Supabase...</span>';
+
+      const formData = new FormData(form);
+      const data = {
+        title: formData.get('title'),
+        category: formData.get('category'),
+        location: formData.get('location'),
+        authorName: formData.get('authorName'),
+        authorRole: formData.get('authorRole'),
+        coverImage: formData.get('coverImage'),
+        excerpt: formData.get('excerpt'),
+        content: formData.get('content'),
+        status: formData.get('status'),
+        scheduledFor: formData.get('scheduledFor') || null,
+        isFeatured: formData.get('isFeatured') === 'on',
+      };
+
+      try {
+        const res = await fetch(`/api/articles/${articleId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const result = await res.json();
+        if (res.ok && result.success) {
+          alert('تم تحديث المقال بنجاح!');
+          window.location.href = '/dashboard/articles';
+        } else {
+          alert(result.error || 'فشل تحديث المقال');
+        }
+      } catch (err) {
+        alert('حدث خطأ في الاتصال بالخادم');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<span>تحديث المقال</span>';
+      }
+    });
+  </script>
+</DashboardLayout>

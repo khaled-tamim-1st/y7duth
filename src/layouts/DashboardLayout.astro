@@ -1,0 +1,200 @@
+---
+import '@/styles/global.css';
+import { requireAuth } from '@/lib/auth';
+import {
+  LayoutDashboard,
+  FileText,
+  PlusCircle,
+  Users,
+  LogOut,
+  ExternalLink,
+  Database,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-astro';
+import { getDb } from '@/db';
+
+interface Props {
+  title?: string;
+  activeTab?: 'overview' | 'articles' | 'new-article' | 'subscribers';
+}
+
+const { title = 'لوحة التحكم — يحدث في الكويت', activeTab = 'overview' } = Astro.props;
+
+const session = requireAuth(Astro.cookies);
+if (!session) {
+  return Astro.redirect('/dashboard/login');
+}
+
+const dbConnected = Boolean(getDb());
+---
+
+<!doctype html>
+<html lang="ar" dir="rtl" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/brand/kuwait-logo.png" />
+    <title>{title}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-[#f2efe9] text-[#18323c] min-h-screen flex antialiased font-sans">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[#18323c] text-[#f4f0e7] flex flex-col justify-between hidden md:flex border-l border-[#24424e] flex-shrink-0">
+      <div>
+        <!-- Brand Header -->
+        <div class="p-6 border-b border-white/10 flex items-center gap-3">
+          <img
+            src="/brand/kuwait-logo.png"
+            alt="شعار يحدث في الكويت"
+            class="w-10 h-10 object-contain rounded-md bg-white p-1"
+          />
+          <div>
+            <span class="block font-bold text-base leading-tight">يحدث في الكويت</span>
+            <span class="block text-[11px] text-[#a9c7b4]">لوحة إدارة التحرير</span>
+          </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="p-4 space-y-1.5 text-sm" aria-label="تنقل لوحة التحكم">
+          <a
+            href="/dashboard"
+            class={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors ${
+              activeTab === 'overview'
+                ? 'bg-[#126447] text-white font-semibold'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <LayoutDashboard class="w-4 h-4" />
+            <span>نظرة عامة</span>
+          </a>
+
+          <a
+            href="/dashboard/articles"
+            class={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors ${
+              activeTab === 'articles'
+                ? 'bg-[#126447] text-white font-semibold'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <FileText class="w-4 h-4" />
+            <span>إدارة المقالات</span>
+          </a>
+
+          <a
+            href="/dashboard/articles/new"
+            class={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors ${
+              activeTab === 'new-article'
+                ? 'bg-[#126447] text-white font-semibold'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <PlusCircle class="w-4 h-4" />
+            <span>كتابة مقال جديد</span>
+          </a>
+
+          <a
+            href="/dashboard/subscribers"
+            class={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors ${
+              activeTab === 'subscribers'
+                ? 'bg-[#126447] text-white font-semibold'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <Users class="w-4 h-4" />
+            <span>مشتركو النشرة</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Bottom User & Status Section -->
+      <div class="p-4 border-t border-white/10 space-y-3">
+        <!-- DB Status -->
+        <div class="bg-black/20 p-2.5 rounded-lg flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2 text-white/70">
+            <Database class="w-3.5 h-3.5" />
+            <span>Supabase</span>
+          </div>
+          {dbConnected ? (
+            <span class="flex items-center gap-1 text-[#b8d3c2]">
+              <CheckCircle2 class="w-3.5 h-3.5" />
+              <span>متصل</span>
+            </span>
+          ) : (
+            <span class="flex items-center gap-1 text-[#cf3935]" title="يرجى إضافة DATABASE_URL في ملف .env">
+              <AlertCircle class="w-3.5 h-3.5" />
+              <span>غير مربوط</span>
+            </span>
+          )}
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <a
+            href="/"
+            target="_blank"
+            class="inline-flex items-center gap-1.5 text-xs text-white/70 hover:text-white transition-colors"
+          >
+            <ExternalLink class="w-3.5 h-3.5" />
+            <span>معاينة الموقع</span>
+          </a>
+
+          <button
+            id="admin-logout-btn"
+            type="button"
+            class="inline-flex items-center gap-1.5 text-xs text-[#cf3935] hover:text-red-400 transition-colors"
+          >
+            <LogOut class="w-3.5 h-3.5" />
+            <span>خروج</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <!-- Top Bar -->
+      <header class="bg-white border-b border-[#d9d1c2] px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+        <div class="flex items-center gap-3">
+          <!-- Mobile Menu Toggle Button -->
+          <a href="/dashboard" class="md:hidden flex items-center gap-2">
+            <img src="/brand/kuwait-logo.png" class="w-8 h-8 rounded" alt="شعار" />
+          </a>
+          <h1 class="text-lg md:text-xl font-bold text-[#18323c]">
+            {title.replace(' — يحدث في الكويت', '')}
+          </h1>
+        </div>
+
+        <div class="flex items-center gap-4 text-xs md:text-sm">
+          <div class="flex items-center gap-2 bg-[#f4f0e7] px-3 py-1.5 rounded-full border border-[#d9d1c2]">
+            <span class="w-2 h-2 rounded-full bg-[#126447]"></span>
+            <span class="font-medium text-[#18323c]">{session.name}</span>
+            <span class="text-[#8c8980]">({session.username})</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Slot -->
+      <main class="flex-1 p-6 md:p-10 max-w-7xl w-full mx-auto">
+        <slot />
+      </main>
+    </div>
+
+    <script>
+      const logoutBtn = document.getElementById('admin-logout-btn');
+      logoutBtn?.addEventListener('click', async () => {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+          window.location.href = '/dashboard/login';
+        } catch {
+          window.location.href = '/dashboard/login';
+        }
+      });
+    </script>
+  </body>
+</html>

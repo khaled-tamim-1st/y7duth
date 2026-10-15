@@ -1,0 +1,219 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { getDb, articlesTable } from '@/db';
+import { categories } from '@/data/stories';
+import {
+  PlusCircle,
+  Search,
+  Filter,
+  Edit,
+  Trash2,
+  ExternalLink,
+  Clock,
+  CheckCircle,
+  FileEdit,
+  FileText,
+} from 'lucide-astro';
+import { desc } from 'drizzle-orm';
+
+const db = getDb();
+let articles: any[] = [];
+
+if (db) {
+  try {
+    articles = await db.select().from(articlesTable).orderBy(desc(articlesTable.createdAt));
+  } catch (e) {
+    console.debug('Articles list error:', e);
+  }
+}
+---
+
+<DashboardLayout title="إدارة المقالات — لوحة تحكم يحدث في الكويت" activeTab="articles">
+  <div class="space-y-6">
+    <!-- Header & Action -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-[#18323c]">إدارة المقالات والتوثيق</h2>
+        <p class="text-xs text-[#777b74] mt-1">
+          عرض، تعديل، جدولة، ومتابعة كافة المقالات المسجلة في السحابة.
+        </p>
+      </div>
+
+      <a
+        href="/dashboard/articles/new"
+        class="inline-flex items-center gap-2 bg-[#126447] hover:bg-[#0e5038] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md transition-all self-start sm:self-auto"
+      >
+        <PlusCircle class="w-4 h-4" />
+        <span>كتابة مقال جديد</span>
+      </a>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="bg-white p-4 rounded-2xl border border-[#d9d1c2] shadow-xs flex flex-wrap items-center justify-between gap-4 text-xs">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-[#8c8980] font-semibold">التصنيف:</span>
+        <button type="button" class="category-filter-btn px-3 py-1.5 rounded-full bg-[#18323c] text-white font-medium" data-cat="all">
+          الكل ({articles.length})
+        </button>
+        {categories.filter((c) => c !== 'الكل').map((c) => (
+          <button type="button" class="category-filter-btn px-3 py-1.5 rounded-full bg-[#f4f0e7] text-[#18323c] hover:bg-[#e8e1d4] font-medium" data-cat={c}>
+            {c}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- Articles Table Container -->
+    <div class="bg-white rounded-2xl border border-[#d9d1c2] shadow-xs overflow-hidden">
+      {articles.length > 0 ? (
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-sm">
+            <thead class="bg-[#f8f6f2] text-xs text-[#8c8980] border-b border-[#d9d1c2]">
+              <tr>
+                <th class="p-4 font-semibold">المقال</th>
+                <th class="p-4 font-semibold">التصنيف</th>
+                <th class="p-4 font-semibold">الكاتب والمكان</th>
+                <th class="p-4 font-semibold">الحالة</th>
+                <th class="p-4 font-semibold">تاريخ الإنشاء</th>
+                <th class="p-4 font-semibold text-center">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#d9d1c2]/60">
+              {articles.map((art) => (
+                <tr class="article-row hover:bg-gray-50 transition-colors" data-category={art.category}>
+                  <td class="p-4">
+                    <div class="font-bold text-[#18323c] max-w-sm line-clamp-1">{art.title}</div>
+                    <div class="text-xs text-[#777b74] max-w-sm line-clamp-1 mt-0.5">{art.excerpt}</div>
+                  </td>
+                  <td class="p-4">
+                    <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-[#f4f0e7] text-[#126447] border border-[#d9d1c2]">
+                      {art.category}
+                    </span>
+                  </td>
+                  <td class="p-4 text-xs">
+                    <div class="text-[#18323c] font-medium">{art.authorName}</div>
+                    <div class="text-[#8c8980]">{art.location || 'الكويت'}</div>
+                  </td>
+                  <td class="p-4">
+                    {art.status === 'published' && (
+                      <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-800 font-medium">
+                        <CheckCircle class="w-3 h-3" />
+                        منشور
+                      </span>
+                    )}
+                    {art.status === 'scheduled' && (
+                      <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 font-medium" title={art.scheduledFor}>
+                        <Clock class="w-3 h-3" />
+                        مجدول ({new Date(art.scheduledFor).toLocaleDateString('ar-KW')})
+                      </span>
+                    )}
+                    {art.status === 'draft' && (
+                      <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-medium">
+                        <FileEdit class="w-3 h-3" />
+                        مسودة
+                      </span>
+                    )}
+                  </td>
+                  <td class="p-4 text-xs text-[#8c8980]">
+                    {new Date(art.createdAt).toLocaleDateString('ar-KW')}
+                  </td>
+                  <td class="p-4 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                      {art.status === 'published' && (
+                        <a
+                          href={`/story/${art.slug}`}
+                          target="_blank"
+                          class="p-2 rounded-lg text-gray-500 hover:text-[#126447] hover:bg-gray-100 transition-colors"
+                          title="عرض في الموقع"
+                        >
+                          <ExternalLink class="w-4 h-4" />
+                        </a>
+                      )}
+                      <a
+                        href={`/dashboard/articles/${art.id}/edit`}
+                        class="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition-colors"
+                        title="تعديل المقال"
+                      >
+                        <Edit class="w-4 h-4" />
+                      </a>
+                      <button
+                        type="button"
+                        class="delete-btn p-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-gray-100 transition-colors"
+                        data-id={art.id}
+                        data-title={art.title}
+                        title="حذف المقال"
+                      >
+                        <Trash2 class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div class="py-16 text-center text-[#8c8980]">
+          <FileText class="w-10 h-10 mx-auto mb-2 opacity-40" />
+          <h3 class="text-base font-bold text-[#18323c]">لا توجد مقالات مسجلة بعد</h3>
+          <p class="text-xs text-[#8c8980] mt-1 max-w-sm mx-auto">
+            بإمكانك كتابة مقال جديد وتحديد تصنيفه وموعد نشره فوراً.
+          </p>
+          <a
+            href="/dashboard/articles/new"
+            class="mt-4 inline-flex items-center gap-2 text-xs font-semibold bg-[#126447] text-white px-5 py-2.5 rounded-xl shadow-xs"
+          >
+            <PlusCircle class="w-4 h-4" />
+            <span>كتابة مقال الآن</span>
+          </a>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <script>
+    // Delete article handling
+    const deleteBtns = document.querySelectorAll('.delete-btn');
+    deleteBtns.forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        const title = btn.getAttribute('data-title');
+        if (!confirm(`هل أنت متأكد من رغبتك في حذف المقال: "${title}"؟`)) return;
+
+        try {
+          const res = await fetch(`/api/articles/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            alert('تعذر حذف المقال');
+          }
+        } catch {
+          alert('خطأ في الاتصال بالخادم');
+        }
+      });
+    });
+
+    // Category filter handling
+    const filterBtns = document.querySelectorAll('.category-filter-btn');
+    const rows = document.querySelectorAll<HTMLElement>('.article-row');
+
+    filterBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cat = btn.getAttribute('data-cat');
+        filterBtns.forEach((b) => {
+          b.className = 'category-filter-btn px-3 py-1.5 rounded-full bg-[#f4f0e7] text-[#18323c] hover:bg-[#e8e1d4] font-medium';
+        });
+        btn.className = 'category-filter-btn px-3 py-1.5 rounded-full bg-[#18323c] text-white font-medium';
+
+        rows.forEach((row) => {
+          const rowCat = row.getAttribute('data-category');
+          if (cat === 'all' || rowCat === cat) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
+</DashboardLayout>

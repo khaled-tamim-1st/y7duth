@@ -70,10 +70,19 @@ import { ArrowLeft, Check, Heart } from 'lucide-astro';
   const form = document.getElementById('newsletter-form') as HTMLFormElement;
   const successMsg = document.getElementById('newsletter-success');
 
-  form?.addEventListener('submit', (e) => {
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = (document.getElementById('newsletter-email') as HTMLInputElement)?.value;
     if (email && email.includes('@')) {
+      try {
+        await fetch('/api/subscribers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+      } catch (err) {
+        console.debug('Subscriber API error:', err);
+      }
       form.classList.add('hidden');
       successMsg?.classList.remove('hidden');
       successMsg?.classList.add('flex');

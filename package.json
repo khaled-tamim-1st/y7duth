@@ -12,10 +12,19 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
+    "@astrojs/node": "^9.5.5",
     "@astrojs/tailwind": "^6.0.0",
     "astro": "^5.4.2",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.8",
+    "drizzle-orm": "^0.45.4",
     "lucide-astro": "^0.556.0",
+    "postgres": "^3.4.9",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "drizzle-kit": "^0.31.11"
   }
 }

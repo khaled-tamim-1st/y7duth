@@ -1,0 +1,151 @@
+---
+import '@/styles/global.css';
+import { getSession } from '@/lib/auth';
+import { Lock, User, ArrowLeft, AlertCircle } from 'lucide-astro';
+
+// If already logged in, redirect directly to dashboard
+const session = getSession(Astro.cookies);
+if (session) {
+  return Astro.redirect('/dashboard');
+}
+---
+
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/brand/kuwait-logo.png" />
+    <title>تسجيل الدخول — لوحة تحكم يحدث في الكويت</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-[#f4f0e7] min-h-screen grid place-items-center p-4 font-sans antialiased text-[#18323c]">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-[#d9d1c2] p-8 md:p-10">
+      <!-- Brand Logo & Header -->
+      <div class="text-center mb-8">
+        <a href="/" class="inline-block mb-3 transition-transform hover:scale-105">
+          <img
+            src="/brand/kuwait-logo.png"
+            alt="شعار يحدث في الكويت"
+            class="w-16 h-16 mx-auto object-contain p-1 rounded-xl bg-[#f4f0e7] border border-[#d9d1c2]"
+          />
+        </a>
+        <h1 class="text-2xl font-bold text-[#18323c]">لوحة إدارة التحرير</h1>
+        <p class="text-xs text-[#777b74] mt-1.5">يحدث في الكويت — حكايات المكان وأهله</p>
+      </div>
+
+      <!-- Error Message Banner -->
+      <div
+        id="login-error-banner"
+        class="hidden mb-6 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2"
+        role="alert"
+      >
+        <AlertCircle class="w-4 h-4 flex-shrink-0" />
+        <span id="login-error-text">بيانات الدخول غير صحيحة</span>
+      </div>
+
+      <!-- Login Form -->
+      <form id="admin-login-form" class="space-y-4">
+        <div>
+          <label for="username" class="block text-xs font-semibold text-[#18323c] mb-1.5">
+            اسم المستخدم
+          </label>
+          <div class="relative">
+            <input
+              id="username"
+              name="username"
+              type="text"
+              required
+              placeholder="admin"
+              class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm pr-10 transition-colors"
+            />
+            <User class="w-4 h-4 text-[#8c8980] absolute right-3.5 top-1/2 -translate-y-1/2" />
+          </div>
+        </div>
+
+        <div>
+          <label for="password" class="block text-xs font-semibold text-[#18323c] mb-1.5">
+            كلمة المرور
+          </label>
+          <div class="relative">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              placeholder="••••••••••••"
+              class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm pr-10 transition-colors"
+            />
+            <Lock class="w-4 h-4 text-[#8c8980] absolute right-3.5 top-1/2 -translate-y-1/2" />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          id="login-submit-btn"
+          class="w-full bg-[#126447] hover:bg-[#0e5038] text-white font-semibold py-3.5 rounded-xl text-sm transition-all shadow-md hover:shadow flex items-center justify-center gap-2 mt-2"
+        >
+          <span>تسجيل الدخول</span>
+          <ArrowLeft class="w-4 h-4" />
+        </button>
+      </form>
+
+      <!-- Back to site link -->
+      <div class="mt-8 pt-6 border-t border-[#d9d1c2]/60 text-center">
+        <a
+          href="/"
+          class="text-xs text-[#627072] hover:text-[#126447] font-medium transition-colors"
+        >
+          ← العودة إلى واجهة المجلة الرئيسية
+        </a>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('admin-login-form') as HTMLFormElement;
+      const errorBanner = document.getElementById('login-error-banner');
+      const errorText = document.getElementById('login-error-text');
+      const submitBtn = document.getElementById('login-submit-btn') as HTMLButtonElement;
+
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorBanner?.classList.add('hidden');
+
+        const username = (document.getElementById('username') as HTMLInputElement).value;
+        const password = (document.getElementById('password') as HTMLInputElement).value;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>جاري التحقق...</span>';
+
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            window.location.href = '/dashboard';
+          } else {
+            if (errorText) errorText.textContent = data.error || 'فشل تسجيل الدخول';
+            errorBanner?.classList.remove('hidden');
+          }
+        } catch {
+          if (errorText) errorText.textContent = 'تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً';
+          errorBanner?.classList.remove('hidden');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span>تسجيل الدخول</span><span class="inline-block -scale-x-100">←</span>';
+        }
+      });
+    </script>
+  </body>
+</html>

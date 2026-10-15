@@ -1,0 +1,110 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { getDb, subscribersTable } from '@/db';
+import { Users, Download, Mail, CheckCircle2 } from 'lucide-astro';
+import { desc } from 'drizzle-orm';
+
+const db = getDb();
+let subscribers: any[] = [];
+
+if (db) {
+  try {
+    subscribers = await db.select().from(subscribersTable).orderBy(desc(subscribersTable.subscribedAt));
+  } catch (e) {
+    console.debug('Subscribers list error:', e);
+  }
+}
+---
+
+<DashboardLayout title="مشتركو النشرة البريدية — يحدث في الكويت" activeTab="subscribers">
+  <div class="space-y-6">
+    <!-- Header & Action -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-[#18323c]">مشتركو «رسالتنا الأسبوعية»</h2>
+        <p class="text-xs text-[#777b74] mt-1">
+          قائمة الإيميلات المسجلة لاستقبال حكايات الكويت صباح كل جمعة.
+        </p>
+      </div>
+
+      <button
+        id="export-csv-btn"
+        type="button"
+        class="inline-flex items-center gap-2 bg-[#18323c] hover:bg-[#254652] text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-xs transition-all self-start sm:self-auto"
+      >
+        <Download class="w-4 h-4" />
+        <span>تصدير القائمة (CSV)</span>
+      </button>
+    </div>
+
+    <!-- Subscribers Table Container -->
+    <div class="bg-white rounded-2xl border border-[#d9d1c2] shadow-xs overflow-hidden">
+      {subscribers.length > 0 ? (
+        <div class="overflow-x-auto">
+          <table id="subscribers-table" class="w-full text-right text-sm">
+            <thead class="bg-[#f8f6f2] text-xs text-[#8c8980] border-b border-[#d9d1c2]">
+              <tr>
+                <th class="p-4 font-semibold">#</th>
+                <th class="p-4 font-semibold">البريد الإلكتروني</th>
+                <th class="p-4 font-semibold">تاريخ الاشتراك</th>
+                <th class="p-4 font-semibold">الحالة</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#d9d1c2]/60">
+              {subscribers.map((sub, index) => (
+                <tr class="hover:bg-gray-50 transition-colors">
+                  <td class="p-4 text-xs text-[#8c8980] font-mono">{index + 1}</td>
+                  <td class="p-4 font-semibold text-[#18323c] flex items-center gap-2">
+                    <Mail class="w-4 h-4 text-[#126447]" />
+                    <span>{sub.email}</span>
+                  </td>
+                  <td class="p-4 text-xs text-[#627072]">
+                    {new Date(sub.subscribedAt).toLocaleDateString('ar-KW')}
+                  </td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
+                      <CheckCircle2 class="w-3.5 h-3.5" />
+                      نشط
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div class="py-16 text-center text-[#8c8980]">
+          <Users class="w-10 h-10 mx-auto mb-2 opacity-40" />
+          <h3 class="text-base font-bold text-[#18323c]">لا يوجد مشتركون مسجلون بعد</h3>
+          <p class="text-xs text-[#8c8980] mt-1 max-w-sm mx-auto">
+            ستظهر هنا تلقائياً إيميلات القراء الذين يسجلون في استمارة النشرة أسفل الموقع.
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <script define:vars={{ subscribers }}>
+    const exportBtn = document.getElementById('export-csv-btn');
+    exportBtn?.addEventListener('click', () => {
+      if (!subscribers || subscribers.length === 0) {
+        alert('لا توجد بيانات لتصديرها حالياً');
+        return;
+      }
+
+      const rows = [
+        ['Email', 'Subscribed At', 'Status'],
+        ...subscribers.map((s) => [s.email, new Date(s.subscribedAt).toISOString(), 'Active']),
+      ];
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `kuwait_subscribers_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  </script>
+</DashboardLayout>

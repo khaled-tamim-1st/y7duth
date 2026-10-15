@@ -1,0 +1,334 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { categories } from '@/data/stories';
+import {
+  Save,
+  Clock,
+  Calendar,
+  Image,
+  Tag,
+  MapPin,
+  User,
+  ArrowRight,
+  Eye,
+  Sparkles,
+} from 'lucide-astro';
+
+const availableCategories = categories.filter((c) => c !== 'الكل');
+---
+
+<DashboardLayout title="كتابة مقال جديد — لوحة تحكم يحدث في الكويت" activeTab="new-article">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-4 mb-8">
+      <div>
+        <a
+          href="/dashboard/articles"
+          class="inline-flex items-center gap-1.5 text-xs text-[#627072] hover:text-[#126447] mb-2"
+        >
+          <ArrowRight class="w-3.5 h-3.5" />
+          <span>العودة لإدارة المقالات</span>
+        </a>
+        <h2 class="text-2xl font-bold text-[#18323c]">كتابة مقال توثيقي جديد</h2>
+        <p class="text-xs text-[#777b74] mt-1">
+          أدخل تفاصيل المقال، الكاتب، وحدد موعد النشر أو احفظه كمسودة.
+        </p>
+      </div>
+    </div>
+
+    <!-- Article Editor Form -->
+    <form id="new-article-form" class="space-y-6">
+      <div class="bg-white p-6 md:p-8 rounded-3xl border border-[#d9d1c2] shadow-xs space-y-6">
+        <!-- Title -->
+        <div>
+          <label for="title" class="block text-xs font-bold text-[#18323c] mb-2">
+            عنوان المقال *
+          </label>
+          <input
+            id="title"
+            name="title"
+            type="text"
+            required
+            placeholder="مثال: حكاية أقدم خباز تنور في المباركية"
+            class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-base md:text-lg font-bold text-[#18323c] transition-colors"
+          />
+        </div>
+
+        <!-- Category & Location Grid -->
+        <div class="grid sm:grid-cols-2 gap-4">
+          <!-- Category Selector -->
+          <div>
+            <label for="category" class="block text-xs font-bold text-[#18323c] mb-2">
+              التصنيف المعتمد *
+            </label>
+            <div class="relative">
+              <select
+                id="category"
+                name="category"
+                required
+                class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm font-semibold text-[#18323c] appearance-none cursor-pointer"
+              >
+                {availableCategories.map((cat) => (
+                  <option value={cat}>{cat}</option>
+                ))}
+              </select>
+              <Tag class="w-4 h-4 text-[#8c8980] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+
+          <!-- Location -->
+          <div>
+            <label for="location" class="block text-xs font-bold text-[#18323c] mb-2">
+              المكان أو الفريج
+            </label>
+            <div class="relative">
+              <input
+                id="location"
+                name="location"
+                type="text"
+                placeholder="مثال: سوق المباركية، فريج القناعات، السالمية"
+                class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm text-[#18323c]"
+              />
+              <MapPin class="w-4 h-4 text-[#8c8980] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Author Name & Role Grid -->
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label for="authorName" class="block text-xs font-bold text-[#18323c] mb-2">
+              اسم الكاتب / الباحث *
+            </label>
+            <div class="relative">
+              <input
+                id="authorName"
+                name="authorName"
+                type="text"
+                required
+                value="فهد الدوسري"
+                class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm text-[#18323c]"
+              />
+              <User class="w-4 h-4 text-[#8c8980] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            </div>
+          </div>
+
+          <div>
+            <label for="authorRole" class="block text-xs font-bold text-[#18323c] mb-2">
+              صفة الكاتب
+            </label>
+            <input
+              id="authorRole"
+              name="authorRole"
+              type="text"
+              placeholder="مثال: باحث في التراث العمراني"
+              class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm text-[#18323c]"
+            />
+          </div>
+        </div>
+
+        <!-- Cover Image URL -->
+        <div>
+          <label for="coverImage" class="block text-xs font-bold text-[#18323c] mb-2">
+            رابط الصورة الرئيسية *
+          </label>
+          <div class="relative">
+            <input
+              id="coverImage"
+              name="coverImage"
+              type="text"
+              required
+              value="/images/kuwait-souq.jpg"
+              placeholder="مثال: /images/kuwait-souq.jpg أو رابط خارجي https://..."
+              class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl px-4 py-3 text-sm text-[#18323c]"
+            />
+            <Image class="w-4 h-4 text-[#8c8980] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          </div>
+          <span class="text-[11px] text-[#8c8980] mt-1 block">
+            يمكنك استخدام الصور المتاحة بالمجلد العام: <code class="bg-[#f4f0e7] px-1.5 py-0.5 rounded font-mono">/images/kuwait-souq.jpg</code> أو <code class="bg-[#f4f0e7] px-1.5 py-0.5 rounded font-mono">/images/neighborhood.jpg</code> أو <code class="bg-[#f4f0e7] px-1.5 py-0.5 rounded font-mono">/images/breakfast.jpg</code>
+          </span>
+        </div>
+
+        <!-- Excerpt -->
+        <div>
+          <label for="excerpt" class="block text-xs font-bold text-[#18323c] mb-2">
+            مقدمة المقال (المقتطف) *
+          </label>
+          <textarea
+            id="excerpt"
+            name="excerpt"
+            required
+            rows="2"
+            placeholder="مقدمة موجزة وجذابة تظهر في بطاقة المقال وعلى منصات التواصل..."
+            class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl p-4 text-sm text-[#18323c] resize-y"
+          ></textarea>
+        </div>
+
+        <!-- Main Content -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label for="content" class="text-xs font-bold text-[#18323c]">
+              نص المقال الكامل *
+            </label>
+            <span class="text-[11px] text-[#8c8980]">يدعم الفقرات والعناوين والاقتباسات</span>
+          </div>
+
+          <textarea
+            id="content"
+            name="content"
+            required
+            rows="10"
+            placeholder="اكتب حكايتك هنا. افصل بين الفقرات بسطر فارغ..."
+            class="w-full bg-[#f8f6f2] border border-[#d9d1c2] focus:border-[#126447] focus:bg-white focus:outline-none rounded-xl p-4 text-base text-[#18323c] leading-relaxed resize-y font-sans"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Publishing & Scheduling Box -->
+      <div class="bg-white p-6 md:p-8 rounded-3xl border border-[#d9d1c2] shadow-xs space-y-5">
+        <h3 class="font-bold text-sm text-[#18323c] flex items-center gap-2">
+          <Clock class="w-4 h-4 text-[#126447]" />
+          <span>خيارات النشر والجدولة الآلية</span>
+        </h3>
+
+        <!-- Status Radios -->
+        <div class="grid sm:grid-cols-3 gap-3">
+          <label class="flex items-center gap-3 p-4 rounded-xl border border-[#d9d1c2] cursor-pointer hover:bg-[#f8f6f2] transition-colors has-[:checked]:border-[#126447] has-[:checked]:bg-green-50/50">
+            <input type="radio" name="status" value="published" checked class="text-[#126447] focus:ring-[#126447]" />
+            <div>
+              <span class="block text-xs font-bold text-[#18323c]">نشر فوري</span>
+              <span class="block text-[10px] text-[#8c8980]">يظهر فوراً في الموقع</span>
+            </div>
+          </label>
+
+          <label class="flex items-center gap-3 p-4 rounded-xl border border-[#d9d1c2] cursor-pointer hover:bg-[#f8f6f2] transition-colors has-[:checked]:border-[#126447] has-[:checked]:bg-blue-50/50">
+            <input type="radio" name="status" value="scheduled" class="text-[#126447] focus:ring-[#126447]" />
+            <div>
+              <span class="block text-xs font-bold text-[#18323c]">جدولة النشر</span>
+              <span class="block text-[10px] text-[#8c8980]">تحديد تاريخ ووقت مستقبلي</span>
+            </div>
+          </label>
+
+          <label class="flex items-center gap-3 p-4 rounded-xl border border-[#d9d1c2] cursor-pointer hover:bg-[#f8f6f2] transition-colors has-[:checked]:border-[#126447] has-[:checked]:bg-amber-50/50">
+            <input type="radio" name="status" value="draft" class="text-[#126447] focus:ring-[#126447]" />
+            <div>
+              <span class="block text-xs font-bold text-[#18323c]">حفظ كمسودة</span>
+              <span class="block text-[10px] text-[#8c8980]">لا يُنشر للقراء</span>
+            </div>
+          </label>
+        </div>
+
+        <!-- Scheduling Datetime Picker (conditionally shown) -->
+        <div id="schedule-picker-container" class="hidden p-4 rounded-xl bg-blue-50/60 border border-blue-200">
+          <label for="scheduledFor" class="block text-xs font-bold text-blue-900 mb-1.5 flex items-center gap-1.5">
+            <Calendar class="w-4 h-4 text-blue-700" />
+            <span>تاريخ ووقت النشر المجدول (بتوقيت الكويت)</span>
+          </label>
+          <input
+            id="scheduledFor"
+            name="scheduledFor"
+            type="datetime-local"
+            class="bg-white border border-blue-300 focus:border-[#126447] focus:outline-none rounded-lg px-4 py-2 text-sm text-[#18323c]"
+          />
+          <span class="text-[11px] text-blue-700/80 block mt-1.5">
+            سيقوم النظام آلياً بتحويل المقال إلى "منشور" فور حلول هذا الموعد.
+          </span>
+        </div>
+
+        <!-- Featured Checkbox -->
+        <div class="pt-2">
+          <label class="inline-flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              id="isFeatured"
+              name="isFeatured"
+              class="rounded text-[#126447] focus:ring-[#126447] w-4 h-4"
+            />
+            <span class="text-xs font-semibold text-[#18323c] flex items-center gap-1">
+              <Sparkles class="w-3.5 h-3.5 text-[#cf3935]" />
+              <span>تمييز المقال كـ «حكاية هذا الأسبوع» في الواجهة الرئيسية</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <a
+          href="/dashboard/articles"
+          class="px-5 py-3 rounded-xl border border-[#d9d1c2] text-xs font-semibold text-[#627072] hover:bg-gray-100 transition-colors"
+        >
+          إلغاء
+        </a>
+        <button
+          type="submit"
+          id="save-article-btn"
+          class="bg-[#126447] hover:bg-[#0e5038] text-white px-8 py-3.5 rounded-xl text-sm font-semibold shadow-md hover:shadow transition-all flex items-center gap-2"
+        >
+          <Save class="w-4 h-4" />
+          <span>حفظ المقال</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('new-article-form') as HTMLFormElement;
+    const saveBtn = document.getElementById('save-article-btn') as HTMLButtonElement;
+    const statusRadios = document.querySelectorAll('input[name="status"]');
+    const schedulePicker = document.getElementById('schedule-picker-container');
+
+    statusRadios.forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        const val = (e.target as HTMLInputElement).value;
+        if (val === 'scheduled') {
+          schedulePicker?.classList.remove('hidden');
+        } else {
+          schedulePicker?.classList.add('hidden');
+        }
+      });
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span>جاري الحفظ في Supabase...</span>';
+
+      const formData = new FormData(form);
+      const data = {
+        title: formData.get('title'),
+        category: formData.get('category'),
+        location: formData.get('location'),
+        authorName: formData.get('authorName'),
+        authorRole: formData.get('authorRole'),
+        coverImage: formData.get('coverImage'),
+        excerpt: formData.get('excerpt'),
+        content: formData.get('content'),
+        status: formData.get('status'),
+        scheduledFor: formData.get('scheduledFor') || null,
+        isFeatured: formData.get('isFeatured') === 'on',
+      };
+
+      try {
+        const res = await fetch('/api/articles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const result = await res.json();
+        if (res.ok && result.success) {
+          alert('تم حفظ المقال بنجاح!');
+          window.location.href = '/dashboard/articles';
+        } else {
+          alert(result.error || 'فشل حفظ المقال');
+        }
+      } catch (err) {
+        alert('حدث خطأ في الاتصال بالخادم');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<span>حفظ المقال</span>';
+      }
+    });
+  </script>
+</DashboardLayout>

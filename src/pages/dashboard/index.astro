@@ -1,0 +1,224 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { getDb, articlesTable, subscribersTable } from '@/db';
+import {
+  FileText,
+  Clock,
+  CheckCircle,
+  FileEdit,
+  Users,
+  PlusCircle,
+  ExternalLink,
+  Calendar,
+  AlertTriangle,
+} from 'lucide-astro';
+import { desc, count, eq } from 'drizzle-orm';
+
+const db = getDb();
+
+let totalArticles = 0;
+let publishedArticles = 0;
+let scheduledArticles = 0;
+let draftArticles = 0;
+let subscribersCount = 0;
+let recentArticles: any[] = [];
+
+if (db) {
+  try {
+    const all = await db.select().from(articlesTable).orderBy(desc(articlesTable.createdAt));
+    recentArticles = all.slice(0, 5);
+    totalArticles = all.length;
+    publishedArticles = all.filter((a) => a.status === 'published').length;
+    scheduledArticles = all.filter((a) => a.status === 'scheduled').length;
+    draftArticles = all.filter((a) => a.status === 'draft').length;
+
+    const subs = await db.select({ val: count() }).from(subscribersTable);
+    subscribersCount = Number(subs[0]?.val ?? 0);
+  } catch (e) {
+    console.debug('Dashboard fetch error:', e);
+  }
+}
+---
+
+<DashboardLayout title="نظرة عامة — لوحة تحكم يحدث في الكويت" activeTab="overview">
+  <!-- Supabase Warning Banner if not connected -->
+  {!db && (
+    <div class="mb-8 p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-4">
+      <AlertTriangle class="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+      <div>
+        <h3 class="font-bold text-sm">قاعدة بيانات Supabase غير مربوطة بعد</h3>
+        <p class="text-xs text-amber-700 mt-1 leading-relaxed">
+          يرجى فتح ملف <code class="bg-amber-100 px-2 py-0.5 rounded font-mono font-bold">.env</code> وإضافة رابط اتصال PostgreSQL الخاص بمشروعك في سوبابيس في متغير <code class="bg-amber-100 px-2 py-0.5 rounded font-mono font-bold">DATABASE_URL</code> للبدء في حفظ ونشر المقالات.
+        </p>
+      </div>
+    </div>
+  )}
+
+  <!-- Header Banner & Quick Action -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div>
+      <h2 class="text-2xl font-bold text-[#18323c]">مرحباً بك في غرفة التحرير</h2>
+      <p class="text-sm text-[#777b74] mt-1">
+        إدارة ونشر وتوثيق حكايات المكان والشخصيات والتراث الكويتي.
+      </p>
+    </div>
+
+    <a
+      href="/dashboard/articles/new"
+      class="inline-flex items-center gap-2 bg-[#126447] hover:bg-[#0e5038] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md transition-all self-start sm:self-auto"
+    >
+      <PlusCircle class="w-4 h-4" />
+      <span>كتابة مقال جديد</span>
+    </a>
+  </div>
+
+  <!-- Key Metrics Stats Cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
+    <!-- Published -->
+    <div class="bg-white p-5 rounded-2xl border border-[#d9d1c2] shadow-xs">
+      <div class="flex items-center justify-between text-xs text-[#8c8980] mb-3">
+        <span>مقالات منشورة</span>
+        <div class="w-8 h-8 rounded-lg bg-green-50 text-green-700 grid place-items-center">
+          <CheckCircle class="w-4 h-4" />
+        </div>
+      </div>
+      <div class="text-2xl md:text-3xl font-extrabold text-[#18323c]">
+        {publishedArticles}
+      </div>
+      <span class="text-[11px] text-[#126447] mt-1 block font-medium">متاحة للقراء بالموقع</span>
+    </div>
+
+    <!-- Scheduled -->
+    <div class="bg-white p-5 rounded-2xl border border-[#d9d1c2] shadow-xs">
+      <div class="flex items-center justify-between text-xs text-[#8c8980] mb-3">
+        <span>مجدولة للنشر</span>
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 grid place-items-center">
+          <Clock class="w-4 h-4" />
+        </div>
+      </div>
+      <div class="text-2xl md:text-3xl font-extrabold text-[#18323c]">
+        {scheduledArticles}
+      </div>
+      <span class="text-[11px] text-blue-700 mt-1 block font-medium">ستُنشر آلياً في موعدها</span>
+    </div>
+
+    <!-- Drafts -->
+    <div class="bg-white p-5 rounded-2xl border border-[#d9d1c2] shadow-xs">
+      <div class="flex items-center justify-between text-xs text-[#8c8980] mb-3">
+        <span>مسودات قيد التجهيز</span>
+        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 grid place-items-center">
+          <FileEdit class="w-4 h-4" />
+        </div>
+      </div>
+      <div class="text-2xl md:text-3xl font-extrabold text-[#18323c]">
+        {draftArticles}
+      </div>
+      <span class="text-[11px] text-amber-700 mt-1 block font-medium">غير منشورة بعد</span>
+    </div>
+
+    <!-- Subscribers -->
+    <div class="bg-white p-5 rounded-2xl border border-[#d9d1c2] shadow-xs">
+      <div class="flex items-center justify-between text-xs text-[#8c8980] mb-3">
+        <span>مشتركو النشرة</span>
+        <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 grid place-items-center">
+          <Users class="w-4 h-4" />
+        </div>
+      </div>
+      <div class="text-2xl md:text-3xl font-extrabold text-[#18323c]">
+        {subscribersCount}
+      </div>
+      <span class="text-[11px] text-purple-700 mt-1 block font-medium">إيميلات مسجلة بالنشرة</span>
+    </div>
+  </div>
+
+  <!-- Recent Articles Table -->
+  <div class="bg-white rounded-2xl border border-[#d9d1c2] shadow-xs overflow-hidden">
+    <div class="p-6 border-b border-[#d9d1c2]/60 flex items-center justify-between">
+      <div>
+        <h3 class="text-base font-bold text-[#18323c]">أحدث المقالات المضافة</h3>
+        <p class="text-xs text-[#8c8980] mt-0.5">قائمة بآخر 5 مقالات مسجلة بالنظام</p>
+      </div>
+
+      <a
+        href="/dashboard/articles"
+        class="text-xs font-semibold text-[#126447] hover:underline flex items-center gap-1"
+      >
+        <span>عرض كل المقالات</span>
+        <span>←</span>
+      </a>
+    </div>
+
+    {recentArticles.length > 0 ? (
+      <div class="overflow-x-auto">
+        <table class="w-full text-right text-sm">
+          <thead class="bg-[#f8f6f2] text-xs text-[#8c8980] border-b border-[#d9d1c2]">
+            <tr>
+              <th class="p-4 font-semibold">عنوان المقال</th>
+              <th class="p-4 font-semibold">التصنيف</th>
+              <th class="p-4 font-semibold">الكاتب</th>
+              <th class="p-4 font-semibold">الحالة</th>
+              <th class="p-4 font-semibold">التاريخ</th>
+              <th class="p-4 font-semibold text-center">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#d9d1c2]/60">
+            {recentArticles.map((art) => (
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="p-4 font-bold text-[#18323c] max-w-xs truncate">
+                  {art.title}
+                </td>
+                <td class="p-4">
+                  <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-[#f4f0e7] text-[#126447] border border-[#d9d1c2]">
+                    {art.category}
+                  </span>
+                </td>
+                <td class="p-4 text-xs text-[#627072]">{art.authorName}</td>
+                <td class="p-4">
+                  {art.status === 'published' && (
+                    <span class="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
+                      منشور
+                    </span>
+                  )}
+                  {art.status === 'scheduled' && (
+                    <span class="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">
+                      مجدول ({new Date(art.scheduledFor).toLocaleDateString('ar-KW')})
+                    </span>
+                  )}
+                  {art.status === 'draft' && (
+                    <span class="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
+                      مسودة
+                    </span>
+                  )}
+                </td>
+                <td class="p-4 text-xs text-[#8c8980]">
+                  {new Date(art.createdAt).toLocaleDateString('ar-KW')}
+                </td>
+                <td class="p-4 text-center">
+                  <a
+                    href={`/dashboard/articles/${art.id}/edit`}
+                    class="text-xs font-semibold text-[#126447] hover:underline"
+                  >
+                    تعديل
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <div class="py-14 text-center text-[#8c8980]">
+        <FileText class="w-8 h-8 mx-auto mb-2 opacity-40" />
+        <p class="text-sm font-semibold text-[#18323c]">لا توجد مقالات مسجلة بعد</p>
+        <p class="text-xs text-[#8c8980] mt-1">ابدأ بإضافة أول مقال توثيقي للكويت الآن.</p>
+        <a
+          href="/dashboard/articles/new"
+          class="mt-4 inline-flex items-center gap-2 text-xs font-semibold bg-[#126447] text-white px-4 py-2 rounded-xl"
+        >
+          <PlusCircle class="w-3.5 h-3.5" />
+          <span>كتابة مقال جديد</span>
+        </a>
+      </div>
+    )}
+  </div>
+</DashboardLayout>
