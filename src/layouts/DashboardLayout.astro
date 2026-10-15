@@ -167,8 +167,8 @@ const isLocal = isLocalDatabase();
         <div class="flex items-center gap-4 text-xs md:text-sm">
           <div class="flex items-center gap-2 bg-[#f4f0e7] px-3 py-1.5 rounded-full border border-[#d9d1c2]">
             <span class="w-2 h-2 rounded-full bg-[#126447]"></span>
-            <span class="font-medium text-[#18323c]">{session.name}</span>
-            <span class="text-[#8c8980]">({session.username})</span>
+            <span class="font-medium text-[#18323c]">{session?.name || 'المدير'}</span>
+            <span class="text-[#8c8980]">({session?.username || 'admin'})</span>
           </div>
         </div>
       </header>

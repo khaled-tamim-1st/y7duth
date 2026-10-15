@@ -1,6 +1,8 @@
 ---
+export const prerender = false;
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 import { categories } from '@/data/stories';
+import { requireAuth } from '@/lib/auth';
 import {
   Save,
   Clock,
@@ -13,6 +15,11 @@ import {
   Eye,
   Sparkles,
 } from 'lucide-astro';
+
+const session = requireAuth(Astro.cookies);
+if (!session) {
+  return Astro.redirect('/dashboard/login');
+}
 
 const availableCategories = categories.filter((c) => c !== 'الكل');
 ---

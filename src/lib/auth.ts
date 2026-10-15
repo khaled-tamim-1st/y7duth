@@ -1,7 +1,7 @@
 import type { AstroCookies } from 'astro';
 
 const SESSION_COOKIE_NAME = 'kuwait_admin_session';
-const SECRET_KEY = process.env.ADMIN_SECRET_KEY || 'kuwait-happening-secret-2026';
+const SECRET_KEY = process.env.ADMIN_SECRET_KEY || 'kuwait-happening-secret-admin-session-key-2026';
 
 export interface AdminSession {
   username: string;

@@ -1,6 +1,8 @@
 ---
+export const prerender = false;
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 import { getDb, articlesTable, subscribersTable, isLocalDatabase } from '@/db';
+import { requireAuth } from '@/lib/auth';
 import {
   FileText,
   Clock,
@@ -13,6 +15,11 @@ import {
   Database,
 } from 'lucide-astro';
 import { desc, count, eq } from 'drizzle-orm';
+
+const session = requireAuth(Astro.cookies);
+if (!session) {
+  return Astro.redirect('/dashboard/login');
+}
 
 const db = getDb();
 const isLocal = isLocalDatabase();

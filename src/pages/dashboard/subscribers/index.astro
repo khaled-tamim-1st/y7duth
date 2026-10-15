@@ -1,8 +1,15 @@
 ---
+export const prerender = false;
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 import { getDb, subscribersTable } from '@/db';
+import { requireAuth } from '@/lib/auth';
 import { Users, Download, Mail, CheckCircle2 } from 'lucide-astro';
 import { desc } from 'drizzle-orm';
+
+const session = requireAuth(Astro.cookies);
+if (!session) {
+  return Astro.redirect('/dashboard/login');
+}
 
 const db = getDb();
 let subscribers: any[] = [];
