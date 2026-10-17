@@ -124,3 +124,12 @@ export function optimizeImageUrl(url: string, width?: number): string {
   return url.replace('/image/upload/', `/image/upload/${transform}/`);
 }
 
+/**
+ * Generates an efficient responsive srcset for Cloudinary images across mobile, tablet, and desktop
+ */
+export function generateImageSrcset(url: string, widths = [360, 640, 960, 1200]): string {
+  if (!url || !url.includes('res.cloudinary.com')) return '';
+  return widths.map((w) => `${optimizeImageUrl(url, w)} ${w}w`).join(', ');
+}
+
+

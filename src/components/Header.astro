@@ -221,9 +221,32 @@ const initialTime = new Intl.DateTimeFormat('ar-KW', {
     }
   }
 
-  // Run immediately and update every second
-  tickKuwaitTime();
-  setInterval(tickKuwaitTime, 1000);
+  // Run immediately and update every second (paused when tab is hidden)
+  let clockInterval: any = null;
+
+  function startClock() {
+    if (!clockInterval) {
+      tickKuwaitTime();
+      clockInterval = setInterval(tickKuwaitTime, 1000);
+    }
+  }
+
+  function stopClock() {
+    if (clockInterval) {
+      clearInterval(clockInterval);
+      clockInterval = null;
+    }
+  }
+
+  startClock();
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      startClock();
+    } else {
+      stopClock();
+    }
+  });
 
   // --- Real-time Kuwait Weather & Temperature Synchronization ---
   const tempText = document.querySelector('#kuwait-live-temp .temp-text');

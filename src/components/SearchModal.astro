@@ -1,51 +1,5 @@
 ---
-import { getDb, articlesTable } from '@/db';
-import { Search, X, ArrowLeft, Clock3 } from 'lucide-astro';
-import { and, eq, lte, or, desc } from 'drizzle-orm';
-
-const db = getDb();
-let searchData: any[] = [];
-
-if (db) {
-  try {
-    const now = new Date();
-    const rows = await db
-      .select({
-        slug: articlesTable.slug,
-        title: articlesTable.title,
-        excerpt: articlesTable.excerpt,
-        category: articlesTable.category,
-        author: articlesTable.authorName,
-        location: articlesTable.location,
-        read: articlesTable.readTime,
-        image: articlesTable.coverImage,
-      })
-      .from(articlesTable)
-      .where(
-        or(
-          eq(articlesTable.status, 'published'),
-          and(
-            eq(articlesTable.status, 'scheduled'),
-            lte(articlesTable.scheduledFor, now)
-          )
-        )
-      )
-      .orderBy(desc(articlesTable.createdAt));
-
-    searchData = rows.map((s) => ({
-      slug: s.slug,
-      title: s.title,
-      excerpt: s.excerpt,
-      category: s.category,
-      author: s.author,
-      location: s.location || 'الكويت',
-      read: s.read || '٥ دقائق',
-      image: s.image,
-    }));
-  } catch (e) {
-    console.debug('Search DB query notice:', e);
-  }
-}
+import { Search, X } from 'lucide-astro';
 ---
 
 <div
@@ -97,67 +51,101 @@ if (db) {
       id="search-results-list"
       class="p-4 md:p-6 max-h-[60vh] overflow-y-auto divide-y divide-[#d9d1c2]/60"
     >
-      <!-- Results injected by client script -->
+      <div class="py-10 text-center text-[#777b74]">
+        <p class="text-sm">اكتب كلمة للبحث في أرشيف الحكايات...</p>
+      </div>
     </div>
 
     <!-- Search Footer -->
     <div class="px-5 py-3 bg-[#e8e1d4] text-[12px] text-[#8c8980] flex items-center justify-between border-t border-[#d9d1c2]">
       <span>اضغط <kbd class="px-1.5 py-0.5 rounded bg-white border border-[#d9d1c2] text-[10px] font-mono">ESC</kbd> للإغلاق</span>
-      <span id="search-count-label">اكتب للبحث في جميع الحكايات</span>
+      <span id="search-count-label">جاهز للبحث</span>
     </div>
   </div>
 </div>
 
-<script define:vars={{ searchData }}>
+<script>
   const searchDialog = document.getElementById('search-dialog');
-  const searchInput = document.getElementById('search-dialog-input');
+  const searchInput = document.getElementById('search-dialog-input') as HTMLInputElement | null;
   const searchResults = document.getElementById('search-results-list');
   const closeSearchBtn = document.getElementById('close-search-btn');
   const openSearchBtn = document.getElementById('open-search-btn');
   const searchCountLabel = document.getElementById('search-count-label');
   const searchChips = document.querySelectorAll('.search-tag-chip');
 
-  function openSearch(initialQuery = '') {
-    searchDialog.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    if (initialQuery) {
-      searchInput.value = initialQuery;
-      performSearch(initialQuery);
-    } else {
-      renderResults(searchData);
-      searchCountLabel.textContent = `عرض جميع الحكايات (${searchData.length})`;
+  let searchData: any[] | null = null;
+  let isFetching = false;
+  let debounceTimer: any = null;
+
+  async function ensureSearchData(): Promise<any[]> {
+    if (searchData) return searchData;
+    if (isFetching) return [];
+    isFetching = true;
+    try {
+      const res = await fetch('/api/search.json');
+      searchData = await res.json();
+    } catch (e) {
+      console.error('Failed to load search data:', e);
+      searchData = [];
+    } finally {
+      isFetching = false;
     }
-    setTimeout(() => searchInput.focus(), 50);
+    return searchData || [];
+  }
+
+  async function openSearch(initialQuery = '') {
+    searchDialog?.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // Prefetch search index
+    const data = await ensureSearchData();
+
+    if (searchInput) {
+      if (initialQuery) {
+        searchInput.value = initialQuery;
+        performSearch(initialQuery);
+      } else {
+        renderResults(data.slice(0, 8));
+        if (searchCountLabel) searchCountLabel.textContent = `عرض أحدث الحكايات (${data.length} حكاية متوفرة)`;
+      }
+      setTimeout(() => searchInput.focus(), 50);
+    }
   }
 
   function closeSearch() {
-    searchDialog.classList.add('hidden');
+    searchDialog?.classList.add('hidden');
     document.body.style.overflow = '';
-    searchInput.value = '';
+    if (searchInput) searchInput.value = '';
   }
 
-  function performSearch(query) {
+  async function performSearch(query: string) {
     const q = query.trim().toLowerCase();
+    const data = await ensureSearchData();
+
     if (!q) {
-      renderResults(searchData);
-      searchCountLabel.textContent = `عرض جميع الحكايات (${searchData.length})`;
+      renderResults(data.slice(0, 8));
+      if (searchCountLabel) searchCountLabel.textContent = `عرض أحدث الحكايات (${data.length} حكاية متوفرة)`;
       return;
     }
 
-    const filtered = searchData.filter((story) => {
-      const matchTitle = story.title.toLowerCase().includes(q);
-      const matchExcerpt = story.excerpt.toLowerCase().includes(q);
-      const matchCategory = story.category.toLowerCase().includes(q);
-      const matchAuthor = story.author.toLowerCase().includes(q);
-      const matchLocation = story.location.toLowerCase().includes(q);
+    const filtered = data.filter((story: any) => {
+      const matchTitle = (story.title || '').toLowerCase().includes(q);
+      const matchExcerpt = (story.excerpt || '').toLowerCase().includes(q);
+      const matchCategory = (story.category || '').toLowerCase().includes(q);
+      const matchAuthor = (story.author || '').toLowerCase().includes(q);
+      const matchLocation = (story.location || '').toLowerCase().includes(q);
       return matchTitle || matchExcerpt || matchCategory || matchAuthor || matchLocation;
     });
 
     renderResults(filtered);
-    searchCountLabel.textContent = `تم العثور على ${filtered.length} حكاية`;
+    if (searchCountLabel) {
+      searchCountLabel.textContent = `تم العثور على ${filtered.length} حكاية`;
+    }
   }
 
-  function renderResults(list) {
+  function renderResults(list: any[]) {
+    if (!searchResults) return;
+
     if (list.length === 0) {
       searchResults.innerHTML = `
         <div class="py-12 text-center text-[#777b74]">
@@ -170,7 +158,7 @@ if (db) {
 
     searchResults.innerHTML = list
       .map(
-        (story) => `
+        (story: any) => `
         <a
           href="/story/${story.slug}"
           class="flex items-center gap-4 py-3.5 px-3 rounded-lg hover:bg-white/80 transition-all group no-underline text-right"
@@ -178,7 +166,11 @@ if (db) {
           <img
             src="${story.image}"
             alt="${story.title}"
+            width="64"
+            height="64"
             class="w-16 h-16 rounded-md object-cover flex-shrink-0 bg-[#d8d1c4]"
+            loading="lazy"
+            decoding="async"
           />
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 text-[11px] text-[#126447] mb-1 font-medium">
@@ -202,44 +194,45 @@ if (db) {
       .join('');
   }
 
-  // Event Listeners
+  // Preload on search trigger hover
+  openSearchBtn?.addEventListener('mouseenter', () => ensureSearchData(), { once: true });
   openSearchBtn?.addEventListener('click', () => openSearch());
   closeSearchBtn?.addEventListener('click', closeSearch);
 
   searchChips.forEach((chip) => {
     chip.addEventListener('click', (e) => {
-      const term = e.currentTarget.getAttribute('data-search-term') || '';
-      searchInput.value = term;
+      const term = (e.currentTarget as HTMLElement).getAttribute('data-search-term') || '';
+      if (searchInput) searchInput.value = term;
       performSearch(term);
     });
   });
 
   searchInput?.addEventListener('input', (e) => {
-    performSearch(e.target.value);
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      performSearch((e.target as HTMLInputElement).value);
+    }, 150);
   });
 
-  // Close on backdrop click
   searchDialog?.addEventListener('click', (e) => {
     if (e.target === searchDialog) closeSearch();
   });
 
-  // Keyboard shortcut Ctrl+K or Cmd+K
   window.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault();
-      if (searchDialog.classList.contains('hidden')) {
+      if (searchDialog?.classList.contains('hidden')) {
         openSearch();
       } else {
         closeSearch();
       }
     }
-    if (e.key === 'Escape' && !searchDialog.classList.contains('hidden')) {
+    if (e.key === 'Escape' && !searchDialog?.classList.contains('hidden')) {
       closeSearch();
     }
   });
 
-  // Listen for custom open search event
-  window.addEventListener('open-search-modal', (e) => {
+  window.addEventListener('open-search-modal', (e: any) => {
     openSearch(e.detail?.query || '');
   });
 </script>

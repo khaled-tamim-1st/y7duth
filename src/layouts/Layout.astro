@@ -139,7 +139,9 @@ const breadcrumbSchema =
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL(image, canonicalURL)} />
 
-    <!-- Fonts -->
+    <!-- Resource Hints & CDN Preconnect -->
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+    <link rel="dns-prefetch" href="https://res.cloudinary.com" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

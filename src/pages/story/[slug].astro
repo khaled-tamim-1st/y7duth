@@ -3,6 +3,7 @@ export const prerender = false;
 import Layout from '@/layouts/Layout.astro';
 import StoryCard from '@/components/StoryCard.astro';
 import { getDb, articlesTable } from '@/db';
+import { remember } from '@/lib/cache';
 import { eq, or, and, lte, ne, sql } from 'drizzle-orm';
 import { marked } from 'marked';
 import { formatSeoTitle, formatSeoDescription, optimizeImageUrl } from '@/lib/seo';
@@ -27,109 +28,140 @@ if (!slug || !db) {
   return Astro.redirect('/404');
 }
 
-const now = new Date();
-const rows = await db
-  .select()
-  .from(articlesTable)
-  .where(
-    and(
-      eq(articlesTable.slug, slug),
-      or(
-        eq(articlesTable.status, 'published'),
-        and(
-          eq(articlesTable.status, 'scheduled'),
-          lte(articlesTable.scheduledFor, now)
-        )
-      )
-    )
-  )
-  .limit(1);
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=120, s-maxage=600, stale-while-revalidate=86400'
+);
 
-const notFound = rows.length === 0;
-let story: any = null;
-let art: any = null;
-let parsedContent = '';
-let relatedStories: any[] = [];
-let breadcrumbs: Array<{ name: string; url: string }> = [];
-
-if (notFound) {
-  Astro.response.status = 404;
-} else {
-  art = rows[0];
-  story = {
-    slug: art.slug,
-    category: art.category,
-    title: art.title,
-    excerpt: art.excerpt,
-    author: art.authorName,
-    authorRole: art.authorRole,
-    date: new Date(art.publishedAt || art.createdAt).toLocaleDateString('ar-KW', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }),
-    isoDate: new Date(art.publishedAt || art.createdAt).toISOString(),
-    isoModified: new Date(art.updatedAt || art.publishedAt || art.createdAt).toISOString(),
-    read: art.readTime || '٥ دقائق',
-    image: art.coverImage,
-    location: art.location || 'الكويت',
-  };
-
-  parsedContent = marked.parse(art.content) as string;
-
-  breadcrumbs = [
-    { name: 'الرئيسية', url: '/' },
-    { name: story.category, url: `/category/${encodeURIComponent(story.category)}` },
-    { name: story.title, url: `/story/${story.slug}` },
-  ];
-
-  // Query related stories with Topical Clustering (same category first)
-  let relatedRows = await db
-    .select()
-    .from(articlesTable)
-    .where(
-      and(
-        ne(articlesTable.id, art.id),
-        eq(articlesTable.category, art.category),
-        eq(articlesTable.status, 'published')
-      )
-    )
-    .limit(2);
-
-  if (relatedRows.length < 2) {
-    const existingId = art.id;
-    const moreRows = await db
+const cachedStoryPayload = await remember(`story_${slug}`, 120, async () => {
+  try {
+    const now = new Date();
+    const rows = await db
       .select()
       .from(articlesTable)
       .where(
         and(
-          ne(articlesTable.id, existingId),
+          eq(articlesTable.slug, slug),
+          or(
+            eq(articlesTable.status, 'published'),
+            and(
+              eq(articlesTable.status, 'scheduled'),
+              lte(articlesTable.scheduledFor, now)
+            )
+          )
+        )
+      )
+      .limit(1);
+
+    if (rows.length === 0) return null;
+
+    const art = rows[0];
+    const story = {
+      slug: art.slug,
+      category: art.category,
+      title: art.title,
+      excerpt: art.excerpt,
+      author: art.authorName,
+      authorRole: art.authorRole,
+      date: new Date(art.publishedAt || art.createdAt).toLocaleDateString('ar-KW', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+      isoDate: new Date(art.publishedAt || art.createdAt).toISOString(),
+      isoModified: new Date(art.updatedAt || art.publishedAt || art.createdAt).toISOString(),
+      read: art.readTime || '٥ دقائق',
+      image: art.coverImage,
+      location: art.location || 'الكويت',
+    };
+
+    const parsedContent = marked.parse(art.content) as string;
+
+    const breadcrumbs = [
+      { name: 'الرئيسية', url: '/' },
+      { name: story.category, url: `/category/${encodeURIComponent(story.category)}` },
+      { name: story.title, url: `/story/${story.slug}` },
+    ];
+
+    const cardFields = {
+      id: articlesTable.id,
+      slug: articlesTable.slug,
+      category: articlesTable.category,
+      title: articlesTable.title,
+      excerpt: articlesTable.excerpt,
+      authorName: articlesTable.authorName,
+      authorRole: articlesTable.authorRole,
+      publishedAt: articlesTable.publishedAt,
+      createdAt: articlesTable.createdAt,
+      readTime: articlesTable.readTime,
+      coverImage: articlesTable.coverImage,
+      location: articlesTable.location,
+    };
+
+    // Query related stories with Topical Clustering (same category first)
+    let relatedRows = await db
+      .select(cardFields)
+      .from(articlesTable)
+      .where(
+        and(
+          ne(articlesTable.id, art.id),
+          eq(articlesTable.category, art.category),
           eq(articlesTable.status, 'published')
         )
       )
       .limit(2);
 
-    for (const r of moreRows) {
-      if (relatedRows.length < 2 && !relatedRows.some((x) => x.id === r.id)) {
-        relatedRows.push(r);
+    if (relatedRows.length < 2) {
+      const existingId = art.id;
+      const moreRows = await db
+        .select(cardFields)
+        .from(articlesTable)
+        .where(
+          and(
+            ne(articlesTable.id, existingId),
+            eq(articlesTable.status, 'published')
+          )
+        )
+        .limit(2);
+
+      for (const r of moreRows) {
+        if (relatedRows.length < 2 && !relatedRows.some((x) => x.id === r.id)) {
+          relatedRows.push(r);
+        }
       }
     }
-  }
 
-  relatedStories = relatedRows.map((r) => ({
-    slug: r.slug,
-    category: r.category as any,
-    title: r.title,
-    excerpt: r.excerpt,
-    author: r.authorName,
-    authorRole: r.authorRole,
-    date: new Date(r.publishedAt || r.createdAt).toLocaleDateString('ar-KW'),
-    read: r.readTime || '٥ دقائق',
-    image: r.coverImage,
-    location: r.location || 'الكويت',
-    body: [],
-  }));
-}
+    const relatedStories = relatedRows.map((r) => ({
+      slug: r.slug,
+      category: r.category as any,
+      title: r.title,
+      excerpt: r.excerpt,
+      author: r.authorName,
+      authorRole: r.authorRole,
+      date: new Date(r.publishedAt || r.createdAt).toLocaleDateString('ar-KW'),
+      read: r.readTime || '٥ دقائق',
+      image: r.coverImage,
+      location: r.location || 'الكويت',
+      body: [],
+    }));
+
+    return {
+      story,
+      parsedContent,
+      breadcrumbs,
+      relatedStories,
+    };
+  } catch (e) {
+    console.debug('Story page lookup error:', e);
+    return null;
+  }
+});
+
+const notFound = !cachedStoryPayload;
+const story = cachedStoryPayload?.story || null;
+const parsedContent = cachedStoryPayload?.parsedContent || '';
+const breadcrumbs = cachedStoryPayload?.breadcrumbs || [];
+const relatedStories = cachedStoryPayload?.relatedStories || [];
 
 const seoTitle = story ? formatSeoTitle(story.title) : 'الحكاية غير متوفرة — يحدث في الكويت';
 const seoDescription = story ? formatSeoDescription(story.excerpt) : 'عذرًا، الحكاية التي تبحث عنها غير متوفرة.';

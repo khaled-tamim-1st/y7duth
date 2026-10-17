@@ -1,6 +1,6 @@
 ---
 import type { Story } from '@/data/stories';
-import { optimizeImageUrl } from '@/lib/seo';
+import { optimizeImageUrl, generateImageSrcset } from '@/lib/seo';
 
 interface Props {
   story: Story;
@@ -9,6 +9,8 @@ interface Props {
 
 const { story, compact = false } = Astro.props;
 const optimizedImg = optimizeImageUrl(story.image, compact ? 200 : 600);
+const imageSrcset = generateImageSrcset(story.image, compact ? [100, 200] : [360, 600, 900]);
+const imageSizes = compact ? '96px' : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px';
 ---
 
 <article
@@ -26,6 +28,8 @@ const optimizedImg = optimizeImageUrl(story.image, compact ? 200 : 600);
     <a href={`/story/${story.slug}`} class="block w-full h-full" tabindex="-1" aria-hidden="true">
       <img
         src={optimizedImg}
+        srcset={imageSrcset || undefined}
+        sizes={imageSizes}
         alt={story.title}
         width={compact ? 96 : 400}
         height={compact ? 96 : 270}

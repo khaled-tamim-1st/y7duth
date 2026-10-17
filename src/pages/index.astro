@@ -4,16 +4,21 @@ import FeaturedStory from '@/components/FeaturedStory.astro';
 import StoryCard from '@/components/StoryCard.astro';
 import { categories } from '@/data/stories';
 import { getDb, articlesTable } from '@/db';
+import { remember } from '@/lib/cache';
 import { desc, and, eq, lte, or } from 'drizzle-orm';
 import { ArrowLeft, Search, Quote, Users, MapPin, Anchor, Coffee, Image as ImageIcon, Sparkles } from 'lucide-astro';
 
-const db = getDb();
-let publishedRows: any[] = [];
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=60, s-maxage=300, stale-while-revalidate=86400'
+);
 
-if (db) {
+const publishedRows = await remember('homepage_articles_list', 60, async () => {
+  const db = getDb();
+  if (!db) return [];
   try {
     const now = new Date();
-    publishedRows = await db
+    return await db
       .select({
         slug: articlesTable.slug,
         category: articlesTable.category,
@@ -41,8 +46,9 @@ if (db) {
       .orderBy(desc(articlesTable.createdAt));
   } catch (e) {
     console.debug('Home DB query notice:', e);
+    return [];
   }
-}
+});
 
 const allStories = publishedRows.map((a) => ({
   slug: a.slug,
@@ -181,11 +187,32 @@ const categoriesMeta = [
 
         <!-- Stories Grid -->
         <section id="كل-الحكايات" class="pt-10 pb-16 scroll-mt-24">
-          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-            {allStories.map((story) => (
-              <StoryCard story={story} />
+          <div id="stories-grid-container" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+            {allStories.map((story, idx) => (
+              <div
+                class={`story-grid-item ${idx >= 12 ? 'hidden' : ''}`}
+                data-story-category={story.category}
+                data-index={idx}
+              >
+                <StoryCard story={story} />
+              </div>
             ))}
           </div>
+
+          {allStories.length > 12 && (
+            <div id="load-more-container" class="mt-14 text-center">
+              <button
+                id="load-more-btn"
+                type="button"
+                class="inline-flex items-center gap-3 bg-[#18323c] hover:bg-[#126447] text-[#f4f0e7] font-semibold text-[15px] px-8 py-3.5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+              >
+                <span>عرض المزيد من الحكايات</span>
+                <span class="w-6 h-6 rounded-full bg-white/20 text-xs flex items-center justify-center font-mono" id="remaining-count">
+                  {allStories.length - 12}
+                </span>
+              </button>
+            </div>
+          )}
         </section>
       </>
     ) : (
@@ -317,7 +344,55 @@ const categoriesMeta = [
 
 <script>
   const filterTabs = document.querySelectorAll('.category-tab-btn');
-  const storyArticles = document.querySelectorAll('#كل-الحكايات article[data-story-category]');
+  const allStoryItems = Array.from(document.querySelectorAll('.story-grid-item'));
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  const loadMoreContainer = document.getElementById('load-more-container');
+  const remainingCountBadge = document.getElementById('remaining-count');
+
+  let activeCategory = 'الكل';
+  let visibleCount = 12;
+  const BATCH_SIZE = 12;
+
+  function updateGridDisplay() {
+    const matchingItems = allStoryItems.filter((item) => {
+      const cat = item.getAttribute('data-story-category');
+      return activeCategory === 'الكل' || cat === activeCategory;
+    });
+
+    const nonMatchingItems = allStoryItems.filter((item) => {
+      const cat = item.getAttribute('data-story-category');
+      return activeCategory !== 'الكل' && cat !== activeCategory;
+    });
+
+    nonMatchingItems.forEach((el) => el.classList.add('hidden'));
+
+    matchingItems.forEach((el, idx) => {
+      if (idx < visibleCount) {
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    });
+
+    const remaining = Math.max(0, matchingItems.length - visibleCount);
+    if (loadMoreContainer) {
+      if (remaining > 0) {
+        loadMoreContainer.style.display = '';
+        if (remainingCountBadge) {
+          remainingCountBadge.textContent = String(remaining);
+        }
+      } else {
+        loadMoreContainer.style.display = 'none';
+      }
+    }
+  }
+
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', () => {
+      visibleCount += BATCH_SIZE;
+      updateGridDisplay();
+    });
+  }
 
   filterTabs.forEach((tab) => {
     tab.addEventListener('click', (e) => {
@@ -333,14 +408,9 @@ const categoriesMeta = [
       tab.classList.add('bg-[#18323c]', 'text-[#f4f0e7]', 'shadow-sm', 'active-tab');
       tab.classList.remove('bg-transparent', 'text-[#546267]');
 
-      storyArticles.forEach((article) => {
-        const itemCategory = article.getAttribute('data-story-category');
-        if (category === 'الكل' || itemCategory === category) {
-          (article as HTMLElement).style.display = '';
-        } else {
-          (article as HTMLElement).style.display = 'none';
-        }
-      });
+      activeCategory = category;
+      visibleCount = 12;
+      updateGridDisplay();
     });
   });
 </script>
