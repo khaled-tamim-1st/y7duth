@@ -70,44 +70,36 @@ const initialTime = new Intl.DateTimeFormat('ar-KW', {
 <!-- Main Header -->
 <header class="bg-[#f4f0e7] border-b border-[#d9d1c2] sticky top-0 z-30 backdrop-blur-md bg-opacity-95">
   <div class="max-w-[1320px] mx-auto px-5 md:px-10 h-[88px] flex items-center justify-between gap-4">
-    <!-- Brand Logo & Name -->
-    <a href="/" class="flex items-center gap-3.5 group no-underline">
-      <div class="relative w-[50px] h-[50px] rounded-lg overflow-hidden flex-shrink-0 bg-white/70 p-1 border border-[#d9d1c2] shadow-sm transition-transform duration-300 group-hover:scale-105">
+    <!-- Brand Logo & Categories Nav -->
+    <div class="flex items-center gap-7 xl:gap-9">
+      <a href="/" class="flex items-center group no-underline" aria-label="يحدث في الكويت - الصفحة الرئيسية">
         <img
           src="/brand/kuwait-logo.png"
-          alt="شعار يحدث في الكويت"
-          class="w-full h-full object-contain"
-          width="48"
-          height="48"
+          alt="يحدث في الكويت"
+          class="w-14 h-14 md:w-16 md:h-16 object-contain flex-shrink-0 transition-transform duration-300 group-hover:scale-105"
+          width="64"
+          height="64"
         />
-      </div>
-      <div class="leading-tight">
-        <span class="block text-[22px] md:text-[25px] font-bold tracking-tight text-[#18323c] group-hover:text-[#126447] transition-colors">
-          يحدث في الكويت
-        </span>
-        <span class="block text-[10px] md:text-[11px] tracking-wider text-[#8b8478] font-medium mt-0.5">
-          حكايات المكان وأهله
-        </span>
-      </div>
-    </a>
+      </a>
 
-    <!-- Desktop Navigation Links -->
-    <nav class="hidden lg:flex items-center gap-7 text-[14px] text-[#41535a] font-medium" aria-label="التنقل الرئيسي">
-      {navCategories.map((cat) => (
+      <!-- Desktop Navigation Links -->
+      <nav class="hidden lg:flex items-center gap-6 xl:gap-7 text-[15px] text-[#41535a] font-medium" aria-label="التنقل الرئيسي">
+        {navCategories.map((cat) => (
+          <a
+            href={`/category/${encodeURIComponent(cat)}`}
+            class="hover:text-[#126447] relative py-1 transition-colors after:content-[''] after:absolute after:bottom-0 after:right-0 after:w-0 after:h-[2px] after:bg-[#126447] hover:after:w-full after:transition-all"
+          >
+            {cat}
+          </a>
+        ))}
         <a
-          href={`/category/${encodeURIComponent(cat)}`}
+          href="/#عن-المجلة"
           class="hover:text-[#126447] relative py-1 transition-colors after:content-[''] after:absolute after:bottom-0 after:right-0 after:w-0 after:h-[2px] after:bg-[#126447] hover:after:w-full after:transition-all"
         >
-          {cat}
+          عن المجلة
         </a>
-      ))}
-      <a
-        href="/#عن-المجلة"
-        class="hover:text-[#126447] relative py-1 transition-colors"
-      >
-        عن المجلة
-      </a>
-    </nav>
+      </nav>
+    </div>
 
     <!-- Header Actions -->
     <div class="flex items-center gap-2.5">
@@ -121,12 +113,12 @@ const initialTime = new Intl.DateTimeFormat('ar-KW', {
         <Search class="w-5 h-5" />
       </button>
 
-      <!-- Newsletter Link -->
+      <!-- Browse Stories Link -->
       <a
-        href="/#النشرة"
+        href="/#أقسام-المجلة"
         class="hidden sm:inline-flex items-center justify-center bg-[#126447] text-[#f4f0e7] rounded-full px-5 py-2.5 text-[13px] font-medium hover:bg-[#0e5038] shadow-sm hover:shadow transition-all"
       >
-        رسالتنا الأسبوعية
+        تصفح الحكايات
       </a>
 
       <!-- Mobile Menu Toggle Button -->
@@ -166,10 +158,10 @@ const initialTime = new Intl.DateTimeFormat('ar-KW', {
     </div>
     <div class="pt-3 border-t border-[#d9d1c2]/60">
       <a
-        href="/#النشرة"
+        href="/#أقسام-المجلة"
         class="block text-center bg-[#126447] text-[#f4f0e7] rounded-full py-2.5 text-sm font-medium hover:bg-[#0e5038]"
       >
-        اشترك في رسالتنا الأسبوعية
+        استكشف أقسام المجلة
       </a>
     </div>
   </nav>

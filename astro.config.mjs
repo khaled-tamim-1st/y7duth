@@ -5,6 +5,7 @@ import node from '@astrojs/node';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://yahduth-fi-al-kuwait.com',
+  trailingSlash: 'never',
   output: 'server',
   adapter: node({
     mode: 'standalone',
@@ -14,5 +15,12 @@ export default defineConfig({
       applyBaseStyles: false,
     }),
   ],
+  vite: {
+    server: {
+      watch: {
+        ignored: ['**/local-data/**', '**/.git/**', '**/dist/**'],
+      },
+    },
+  },
   compressHTML: true,
 });

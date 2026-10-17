@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -64,6 +62,17 @@
   color: #31444d;
 }
 
+.article-prose > p:first-of-type {
+  font-size: 1.3rem;
+  line-height: 2.1;
+  font-weight: 500;
+  color: #18323c;
+  border-right: 4px solid #126447;
+  padding-right: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
 .article-prose h2 {
   margin-top: 2.75rem;
   margin-bottom: 1.25rem;
@@ -71,6 +80,78 @@
   font-weight: 700;
   line-height: 1.5;
   color: #18323c;
+  border-bottom: 1px solid #e2dacd;
+  padding-bottom: 0.5rem;
+}
+
+.article-prose h3 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-size: 1.38rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #18323c;
+}
+
+.article-prose ul {
+  list-style-type: disc;
+  margin-top: 1.25rem;
+  margin-bottom: 1.75rem;
+  padding-right: 1.75rem;
+  color: #31444d;
+}
+
+.article-prose ol {
+  list-style-type: decimal;
+  margin-top: 1.25rem;
+  margin-bottom: 1.75rem;
+  padding-right: 1.75rem;
+  color: #31444d;
+}
+
+.article-prose li {
+  margin-bottom: 0.75rem;
+  font-size: 1.12rem;
+  line-height: 2;
+}
+
+.article-prose blockquote {
+  margin: 2rem 0;
+  padding: 1.25rem 1.75rem;
+  background-color: #ede7dc;
+  border-right: 4px solid #126447;
+  border-radius: 0.5rem;
+  color: #18323c;
+  font-weight: 500;
+}
+
+.article-prose blockquote p {
+  margin-bottom: 0;
+  font-size: 1.15rem;
+  line-height: 2;
+}
+
+.article-prose a {
+  color: #126447;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.article-prose a:hover {
+  color: #0e5038;
+}
+
+.article-prose hr {
+  border: 0;
+  border-top: 1px solid #d9d1c2;
+  margin: 2.5rem 0;
+}
+
+.article-prose strong {
+  color: #18323c;
+  font-weight: 700;
 }
 
 .image-wash {

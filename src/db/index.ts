@@ -60,10 +60,14 @@ async function initLocalSchema(pg: PGlite) {
   }
 }
 
-let localPgliteClient: PGlite | null = null;
+const globalForDb = globalThis as unknown as {
+  __localPgliteClient?: PGlite;
+  __dbInstance?: any;
+  __isInitialized?: boolean;
+};
 
 export function getDb() {
-  if (dbInstance) return dbInstance;
+  if (globalForDb.__dbInstance) return globalForDb.__dbInstance;
 
   // 1. If remote Supabase DATABASE_URL is provided, use postgres client
   if (
@@ -76,8 +80,8 @@ export function getDb() {
         ssl: connectionString.includes('localhost') ? false : 'require',
         max: 10,
       });
-      dbInstance = drizzlePg(client, { schema });
-      return dbInstance;
+      globalForDb.__dbInstance = drizzlePg(client, { schema });
+      return globalForDb.__dbInstance;
     } catch (e) {
       console.warn('⚠️ تعذر الاتصال بـ Supabase، التحويل تلقائياً لقاعدة البيانات المحلية PGlite');
     }
@@ -88,13 +92,13 @@ export function getDb() {
     const dataDir = path.resolve(process.cwd(), 'local-data', 'pglite');
     fs.mkdirSync(dataDir, { recursive: true });
 
-    if (!localPgliteClient) {
-      localPgliteClient = new PGlite(dataDir);
-      initLocalSchema(localPgliteClient);
+    if (!globalForDb.__localPgliteClient) {
+      globalForDb.__localPgliteClient = new PGlite(dataDir);
+      initLocalSchema(globalForDb.__localPgliteClient);
     }
 
-    dbInstance = drizzlePglite(localPgliteClient, { schema });
-    return dbInstance;
+    globalForDb.__dbInstance = drizzlePglite(globalForDb.__localPgliteClient, { schema });
+    return globalForDb.__dbInstance;
   } catch (error) {
     console.error('Failed to initialize local PGlite:', error);
     return null;

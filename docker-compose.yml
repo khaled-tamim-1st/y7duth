@@ -1,0 +1,24 @@
+services:
+  yahduth_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yahduth_app
+    restart: unless-stopped
+    ports:
+      - "5000:4321"
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=4321
+      - ADMIN_SECRET_KEY=kuwait-happening-secret-admin-session-key-2026
+      - DEFAULT_ADMIN_USERNAME=admin
+      - DEFAULT_ADMIN_PASSWORD=kuwait@admin2026
+    volumes:
+      - ./local-data:/app/local-data
+    networks:
+      - web_network
+
+networks:
+  web_network:
+    external: true

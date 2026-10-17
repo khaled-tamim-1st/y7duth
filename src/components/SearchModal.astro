@@ -1,18 +1,51 @@
 ---
-import { stories } from '@/data/stories';
+import { getDb, articlesTable } from '@/db';
 import { Search, X, ArrowLeft, Clock3 } from 'lucide-astro';
+import { and, eq, lte, or, desc } from 'drizzle-orm';
 
-// Clean stories payload for search
-const searchData = stories.map((s) => ({
-  slug: s.slug,
-  title: s.title,
-  excerpt: s.excerpt,
-  category: s.category,
-  author: s.author,
-  location: s.location,
-  read: s.read,
-  image: s.image,
-}));
+const db = getDb();
+let searchData: any[] = [];
+
+if (db) {
+  try {
+    const now = new Date();
+    const rows = await db
+      .select({
+        slug: articlesTable.slug,
+        title: articlesTable.title,
+        excerpt: articlesTable.excerpt,
+        category: articlesTable.category,
+        author: articlesTable.authorName,
+        location: articlesTable.location,
+        read: articlesTable.readTime,
+        image: articlesTable.coverImage,
+      })
+      .from(articlesTable)
+      .where(
+        or(
+          eq(articlesTable.status, 'published'),
+          and(
+            eq(articlesTable.status, 'scheduled'),
+            lte(articlesTable.scheduledFor, now)
+          )
+        )
+      )
+      .orderBy(desc(articlesTable.createdAt));
+
+    searchData = rows.map((s) => ({
+      slug: s.slug,
+      title: s.title,
+      excerpt: s.excerpt,
+      category: s.category,
+      author: s.author,
+      location: s.location || 'الكويت',
+      read: s.read || '٥ دقائق',
+      image: s.image,
+    }));
+  } catch (e) {
+    console.debug('Search DB query notice:', e);
+  }
+}
 ---
 
 <div

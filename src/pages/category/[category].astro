@@ -62,12 +62,23 @@ const categoryStories = categoryRows.map((r) => ({
   body: r.content.split('\n\n').filter(Boolean),
 }));
 
-const desc = categoryDescriptions[category] || `جميع الحكايات والتقارير المصنفة تحت ${category}.`;
+import { CATEGORY_SEO_META } from '@/lib/seo';
+
+const seoMeta = CATEGORY_SEO_META[category] || {
+  title: `حكايات ${category} — يحدث في الكويت`,
+  desc: categoryDescriptions[category] || `جميع الحكايات والتقارير المصنفة تحت ${category}.`,
+};
+
+const breadcrumbs = [
+  { name: 'الرئيسية', url: '/' },
+  { name: category, url: `/category/${encodeURIComponent(category)}` },
+];
 ---
 
 <Layout
-  title={`حكايات ${category} — يحدث في الكويت`}
-  description={desc}
+  title={seoMeta.title}
+  description={seoMeta.desc}
+  breadcrumbs={breadcrumbs}
 >
   <div class="max-w-[1320px] mx-auto px-5 md:px-10 py-10 md:py-14">
     <!-- Breadcrumb & Header -->

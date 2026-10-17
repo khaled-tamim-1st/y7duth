@@ -1,20 +1,26 @@
 ---
 import type { Story } from '@/data/stories';
 import { ArrowLeft } from 'lucide-astro';
+import { optimizeImageUrl } from '@/lib/seo';
 
 interface Props {
   story: Story;
 }
 
 const { story } = Astro.props;
+const optimizedHero = optimizeImageUrl(story.image, 1200);
 ---
 
 <section class="group relative min-h-[420px] md:min-h-[520px] rounded-lg overflow-hidden bg-[#263b3e] flex flex-col justify-end text-right">
   <img
-    src={story.image}
+    src={optimizedHero}
     alt={story.title}
+    width="800"
+    height="520"
     class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
     loading="eager"
+    fetchpriority="high"
+    decoding="async"
   />
   <div class="image-wash absolute inset-0"></div>
 

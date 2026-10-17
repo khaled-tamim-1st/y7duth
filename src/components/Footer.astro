@@ -1,91 +1,139 @@
 ---
-import { ArrowLeft, Check, Heart } from 'lucide-astro';
+// Footer Component - Replaced newsletter with comprehensive magazine overview + developer credit bar
 ---
 
-<footer id="النشرة" class="bg-[#18323c] text-[#f4f0e7] mt-16 border-t border-[#23424d]">
-  <!-- Newsletter Section -->
-  <div class="max-w-[1320px] mx-auto px-5 md:px-10 py-12 md:py-16 grid md:grid-cols-2 gap-10 items-center">
-    <div>
-      <span class="text-[11px] text-[#a9c7b4] tracking-widest font-semibold uppercase">
-        رسالة من الكويت
-      </span>
-      <h2 class="text-[28px] md:text-[36px] font-bold mt-2 leading-tight">
-        حكاية جديدة، كل أسبوع.
-      </h2>
-      <p class="text-[14px] text-white/70 mt-2.5 max-w-[480px] leading-relaxed">
-        نرسل لك اختياراتنا من قلب المدينة كل صباح جمعة. بلا ضجيج، وبلا رسائل دعائية متكررة.
-      </p>
-    </div>
-
-    <!-- Newsletter Form -->
-    <div id="newsletter-container" class="w-full">
-      <form id="newsletter-form" class="flex items-center gap-3 border-b-2 border-white/30 pb-3 focus-within:border-[#126447] transition-colors">
-        <label for="newsletter-email" class="sr-only">بريدك الإلكتروني</label>
-        <input
-          id="newsletter-email"
-          type="email"
-          required
-          placeholder="أدخل بريدك الإلكتروني..."
-          class="bg-transparent outline-none flex-1 text-[15px] placeholder:text-white/45 text-white"
-        />
-        <button
-          type="submit"
-          class="inline-flex items-center gap-2 bg-[#126447] hover:bg-[#0e5038] text-white px-5 py-2.5 rounded-full text-[13px] font-medium transition-all flex-shrink-0"
-        >
-          <span>سجّلني</span>
-          <ArrowLeft class="w-4 h-4" />
-        </button>
-      </form>
-
-      <div id="newsletter-success" class="hidden items-center gap-3 text-[#b8d3c2] py-2">
-        <div class="w-7 h-7 rounded-full bg-[#126447] grid place-items-center text-white">
-          <Check class="w-4 h-4" />
-        </div>
-        <span class="text-sm font-medium">وصلت رسالتك. نراك في البريد قريبًا بإذن الله.</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom Copyright & Credit -->
-  <div class="border-t border-white/10">
-    <div class="max-w-[1320px] mx-auto px-5 md:px-10 py-6 flex flex-col sm:flex-row gap-4 justify-between items-center text-[12px] text-white/50">
+<footer class="bg-[#18323c] text-[#f4f0e7] mt-16 border-t border-[#23424d]">
+  <!-- Magazine About & Navigation Section -->
+  <div class="max-w-[1320px] mx-auto px-5 md:px-10 py-12 md:py-14 grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+    <!-- Brand & Mission Column -->
+    <div class="md:col-span-5 space-y-4">
       <div class="flex items-center gap-3">
         <img
           src="/brand/kuwait-logo.png"
           alt="شعار يحدث في الكويت"
-          class="w-6 h-6 object-contain opacity-80"
-          width="24"
-          height="24"
+          class="w-11 h-11 object-contain flex-shrink-0"
+          width="44"
+          height="44"
         />
-        <span>© ٢٠٢٥ يحدث في الكويت — مجلة مستقلة عن الحياة والثقافة في الكويت</span>
+        <div>
+          <span class="block text-xl font-bold tracking-tight text-white">يحدث في الكويت</span>
+          <span class="block text-xs text-[#b8d3c2] font-medium">مجلة وثائقية عن حكايات المكان وأهله</span>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <span>نكتب عنّا، لنقرأ بعضنا.</span>
+      <p class="text-sm text-white/75 leading-relaxed max-w-md">
+        منصة توثيقية ثقافية مستقلة تُعنى بحكايات الكويت وتراثها؛ ننصت لتفاصيل الفرجان القديمة، ونوثق سِيَر الرواد، ونسلط الضوء على الهوية الكويتية الأصيلة.
+      </p>
+    </div>
+
+    <!-- Magazine Sections Navigation -->
+    <div class="md:col-span-4 space-y-3">
+      <h3 class="text-xs font-semibold text-[#a9c7b4] tracking-wider uppercase">أقسام المجلة</h3>
+      <ul class="space-y-2.5 text-sm text-white/70">
+        <li>
+          <a href="/category/%D8%A3%D9%87%D9%84%20%D8%A7%D9%84%D8%AF%D9%8A%D8%B1%D8%A9" class="hover:text-white transition-colors flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#126447]"></span>
+            <span>أهل الديرة — شخصيات ورواد وسِيَر ملهمة</span>
+          </a>
+        </li>
+        <li>
+          <a href="/category/%D9%81%D9%8A%20%D8%A7%D9%84%D9%81%D8%B1%D9%8A%D8%AC" class="hover:text-white transition-colors flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#126447]"></span>
+            <span>في الفريج — أسواق قديمة وفرجان ومعالم عتيقة</span>
+          </a>
+        </li>
+        <li>
+          <a href="/category/%D8%B3%D9%81%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AF%D9%8A%D8%B1%D8%A9" class="hover:text-white transition-colors flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#126447]"></span>
+            <span>سفرة الديرة — المطبخ والضيافة والتراث الغذائي</span>
+          </a>
+        </li>
+        <li>
+          <a href="/category/%D8%B3%D9%88%D8%A7%D9%84%D9%81%20%D9%88%D8%AA%D8%B1%D8%A7%D8%AB" class="hover:text-white transition-colors flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#126447]"></span>
+            <span>سوالف وتراث — حكايات البحر والبادية والفرجان</span>
+          </a>
+        </li>
+        <li>
+          <a href="/category/%D8%A3%D9%84%D8%A8%D9%88%D9%85%20%D8%A7%D9%84%D8%B0%D8%A7%D9%83%D8%B1%D8%A9" class="hover:text-white transition-colors flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#126447]"></span>
+            <span>ألبوم الذاكرة — صور وأماكن ووثائق نادرة</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Info Column -->
+    <div class="md:col-span-3 space-y-3">
+      <h3 class="text-xs font-semibold text-[#a9c7b4] tracking-wider uppercase">عن المشروع</h3>
+      <div class="text-sm text-white/70 space-y-2.5 leading-relaxed">
+        <p>توثيق مستقل من القلب، بلا ضجيج وبلا إعلانات تجارية متكررة.</p>
+        <p class="text-xs text-[#b8d3c2]">دولة الكويت — نكتب عنّا، لنقرأ بعضنا</p>
+        <a
+          href="/#عن-المجلة"
+          class="inline-block mt-1 text-xs text-white/90 hover:text-white underline underline-offset-4 decoration-[#126447]"
+        >
+          اقرأ نبذة عن المجلة والرؤية ←
+        </a>
       </div>
     </div>
   </div>
+
+  <!-- Bottom Copyright & Quick Links -->
+  <div class="border-t border-white/10 bg-[#142a33]">
+    <div class="max-w-[1320px] mx-auto px-5 md:px-10 py-5 flex flex-col md:flex-row gap-4 justify-between items-center text-[12px]">
+      <!-- Copyright Notice -->
+      <div class="flex items-center gap-3 text-white/60 text-center md:text-right">
+        <img
+          src="/brand/kuwait-logo.png"
+          alt="شعار يحدث في الكويت"
+          class="w-5 h-5 object-contain opacity-80 flex-shrink-0"
+          width="20"
+          height="20"
+        />
+        <span>© 2026 يحدث في الكويت. جميع الحقوق محفوظة — مجلة وثائقية عن ثقافة وتراث وتفاصيل الحياة في الكويت.</span>
+      </div>
+
+      <!-- Quick Navigation Links -->
+      <nav class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-white/60 font-medium" aria-label="روابط سريعة">
+        <a href="/category/%D8%A3%D9%87%D9%84%20%D8%A7%D9%84%D8%AF%D9%8A%D8%B1%D8%A9" class="hover:text-white transition-colors">أهل الديرة</a>
+        <span class="text-white/20 select-none">|</span>
+        <a href="/category/%D9%81%D9%8A%20%D8%A7%D9%84%D9%81%D8%B1%D9%8A%D8%AC" class="hover:text-white transition-colors">في الفريج</a>
+        <span class="text-white/20 select-none">|</span>
+        <a href="/category/%D8%B3%D9%81%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AF%D9%8A%D8%B1%D8%A9" class="hover:text-white transition-colors">سفرة الديرة</a>
+        <span class="text-white/20 select-none">|</span>
+        <a href="/category/%D8%B3%D9%88%D8%A7%D9%84%D9%81%20%D9%88%D8%AA%D8%B1%D8%A7%D8%AB" class="hover:text-white transition-colors">سوالف وتراث</a>
+        <span class="text-white/20 select-none">|</span>
+        <a href="/category/%D8%A3%D9%84%D8%A8%D9%88%D9%85%20%D8%A7%D9%84%D8%B0%D8%A7%D9%83%D8%B1%D8%A9" class="hover:text-white transition-colors">ألبوم الذاكرة</a>
+        <span class="text-white/20 select-none">|</span>
+        <a href="/#عن-المجلة" class="hover:text-white transition-colors">عن المجلة</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Developer Credit Bottom Bar (nofollow & SEO Best Practices) -->
+  <div class="bg-[#0b0c1b] border-t border-[#1e1b4b] text-white/80 py-3.5 px-4 text-[12px] md:text-[13px] font-medium tracking-wide">
+    <div class="max-w-[1320px] mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-center">
+      <span class="text-white/85">صُنع بإتقان وشغف بواسطة</span>
+      <a
+        href="https://webinoo.online"
+        target="_blank"
+        rel="nofollow noopener"
+        class="inline-flex items-center justify-center px-4 py-1 rounded-full text-xs font-bold text-white bg-[#7c3aed] hover:bg-[#6d28d9] shadow-sm hover:shadow-[0_0_14px_rgba(124,58,237,0.45)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:ring-offset-2 focus:ring-offset-[#0b0c1b]"
+        title="WebinOO | تصميم وتطوير المواقع والحلول الرقمية"
+        aria-label="WebinOO - تصميم مواقع وحلول الويب"
+      >
+        WebinOO
+      </a>
+      <span class="text-white/40">-</span>
+      <a
+        href="https://webinoo.online"
+        target="_blank"
+        rel="nofollow noopener"
+        class="text-white/70 hover:text-white transition-colors duration-200 hover:underline decoration-white/40 underline-offset-4"
+        title="WebinOO | حلول الويب وتصدر نتائج البحث Google"
+      >
+        حلول الويب وتصدر Google
+      </a>
+    </div>
+  </div>
 </footer>
-
-<script>
-  const form = document.getElementById('newsletter-form') as HTMLFormElement;
-  const successMsg = document.getElementById('newsletter-success');
-
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = (document.getElementById('newsletter-email') as HTMLInputElement)?.value;
-    if (email && email.includes('@')) {
-      try {
-        await fetch('/api/subscribers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-      } catch (err) {
-        console.debug('Subscriber API error:', err);
-      }
-      form.classList.add('hidden');
-      successMsg?.classList.remove('hidden');
-      successMsg?.classList.add('flex');
-    }
-  });
-</script>

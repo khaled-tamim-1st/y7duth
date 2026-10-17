@@ -3,7 +3,9 @@ export const prerender = false;
 import Layout from '@/layouts/Layout.astro';
 import StoryCard from '@/components/StoryCard.astro';
 import { getDb, articlesTable } from '@/db';
-import { eq, or, and, lte, ne } from 'drizzle-orm';
+import { eq, or, and, lte, ne, sql } from 'drizzle-orm';
+import { marked } from 'marked';
+import { formatSeoTitle, formatSeoDescription, optimizeImageUrl } from '@/lib/seo';
 import {
   ArrowRight,
   ArrowLeft,
@@ -14,12 +16,14 @@ import {
   Copy,
   MapPin,
   Calendar,
+  Compass,
 } from 'lucide-astro';
 
 const { slug } = Astro.params;
 const db = getDb();
 
 if (!slug || !db) {
+  Astro.response.status = 404;
   return Astro.redirect('/404');
 }
 
@@ -41,263 +45,333 @@ const rows = await db
   )
   .limit(1);
 
-if (rows.length === 0) {
-  return Astro.redirect('/404');
+const notFound = rows.length === 0;
+let story: any = null;
+let art: any = null;
+let parsedContent = '';
+let relatedStories: any[] = [];
+let breadcrumbs: Array<{ name: string; url: string }> = [];
+
+if (notFound) {
+  Astro.response.status = 404;
+} else {
+  art = rows[0];
+  story = {
+    slug: art.slug,
+    category: art.category,
+    title: art.title,
+    excerpt: art.excerpt,
+    author: art.authorName,
+    authorRole: art.authorRole,
+    date: new Date(art.publishedAt || art.createdAt).toLocaleDateString('ar-KW', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }),
+    isoDate: new Date(art.publishedAt || art.createdAt).toISOString(),
+    isoModified: new Date(art.updatedAt || art.publishedAt || art.createdAt).toISOString(),
+    read: art.readTime || '٥ دقائق',
+    image: art.coverImage,
+    location: art.location || 'الكويت',
+  };
+
+  parsedContent = marked.parse(art.content) as string;
+
+  breadcrumbs = [
+    { name: 'الرئيسية', url: '/' },
+    { name: story.category, url: `/category/${encodeURIComponent(story.category)}` },
+    { name: story.title, url: `/story/${story.slug}` },
+  ];
+
+  // Query related stories with Topical Clustering (same category first)
+  let relatedRows = await db
+    .select()
+    .from(articlesTable)
+    .where(
+      and(
+        ne(articlesTable.id, art.id),
+        eq(articlesTable.category, art.category),
+        eq(articlesTable.status, 'published')
+      )
+    )
+    .limit(2);
+
+  if (relatedRows.length < 2) {
+    const existingId = art.id;
+    const moreRows = await db
+      .select()
+      .from(articlesTable)
+      .where(
+        and(
+          ne(articlesTable.id, existingId),
+          eq(articlesTable.status, 'published')
+        )
+      )
+      .limit(2);
+
+    for (const r of moreRows) {
+      if (relatedRows.length < 2 && !relatedRows.some((x) => x.id === r.id)) {
+        relatedRows.push(r);
+      }
+    }
+  }
+
+  relatedStories = relatedRows.map((r) => ({
+    slug: r.slug,
+    category: r.category as any,
+    title: r.title,
+    excerpt: r.excerpt,
+    author: r.authorName,
+    authorRole: r.authorRole,
+    date: new Date(r.publishedAt || r.createdAt).toLocaleDateString('ar-KW'),
+    read: r.readTime || '٥ دقائق',
+    image: r.coverImage,
+    location: r.location || 'الكويت',
+    body: [],
+  }));
 }
 
-const art = rows[0];
-const story = {
-  slug: art.slug,
-  category: art.category,
-  title: art.title,
-  excerpt: art.excerpt,
-  author: art.authorName,
-  authorRole: art.authorRole,
-  date: new Date(art.publishedAt || art.createdAt).toLocaleDateString('ar-KW', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }),
-  read: art.readTime || '٥ دقائق',
-  image: art.coverImage,
-  location: art.location || 'الكويت',
-  body: art.content.split('\n\n').filter(Boolean),
-};
-
-// Query related stories
-const relatedRows = await db
-  .select()
-  .from(articlesTable)
-  .where(
-    and(
-      ne(articlesTable.id, art.id),
-      eq(articlesTable.status, 'published')
-    )
-  )
-  .limit(2);
-
-const relatedStories = relatedRows.map((r) => ({
-  slug: r.slug,
-  category: r.category as any,
-  title: r.title,
-  excerpt: r.excerpt,
-  author: r.authorName,
-  authorRole: r.authorRole,
-  date: new Date(r.publishedAt || r.createdAt).toLocaleDateString('ar-KW'),
-  read: r.readTime || '٥ دقائق',
-  image: r.coverImage,
-  location: r.location || 'الكويت',
-  body: r.content.split('\n\n').filter(Boolean),
-}));
+const seoTitle = story ? formatSeoTitle(story.title) : 'الحكاية غير متوفرة — يحدث في الكويت';
+const seoDescription = story ? formatSeoDescription(story.excerpt) : 'عذرًا، الحكاية التي تبحث عنها غير متوفرة.';
 ---
 
-<Layout
-  title={`${story.title} — يحدث في الكويت`}
-  description={story.excerpt}
-  image={story.image}
-  article={{
-    author: story.author,
-    date: story.date,
-    category: story.category,
-  }}
->
-  <article class="fade-up">
-    <!-- Article Header -->
-    <header class="max-w-[900px] mx-auto px-5 md:px-8 pt-8 md:pt-12">
-      <!-- Back Link -->
-      <a
-        href="/"
-        class="inline-flex items-center gap-2 text-[13px] font-medium text-[#647170] hover:text-[#126447] transition-colors"
-      >
-        <ArrowRight class="w-4 h-4" />
-        <span>كل الحكايات</span>
-      </a>
-
-      <!-- Category & Location -->
-      <div class="mt-8 flex items-center gap-2.5 text-[13px] font-medium text-[#126447]">
-        <a
-          href={`/category/${encodeURIComponent(story.category)}`}
-          class="hover:underline"
-        >
-          {story.category}
-        </a>
-        <span class="text-[#b7ad9d]">/</span>
-        <span class="flex items-center gap-1 text-[#6a7574]">
-          <MapPin class="w-3.5 h-3.5 text-[#cf3935]" />
-          {story.location}
-        </span>
-      </div>
-
-      <!-- Main Title -->
-      <h1 class="text-[32px] md:text-[50px] leading-[1.3] font-bold tracking-tight text-[#18323c] mt-3">
-        {story.title}
-      </h1>
-
-      <!-- Excerpt -->
-      <p class="text-[17px] md:text-[20px] leading-[1.85] text-[#5c6868] mt-4 max-w-[780px]">
-        {story.excerpt}
-      </p>
-
-      <!-- Author & Interaction Bar -->
-      <div class="flex flex-wrap items-center justify-between gap-4 border-y border-[#d9d1c2] py-4 mt-8 text-[13px] text-[#777b74]">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-[#dce5da] text-[#126447] font-bold grid place-items-center text-base shadow-sm">
-            {story.author.charAt(0)}
-          </div>
-          <div>
-            <div class="font-semibold text-[#18323c]">كتابة {story.author}</div>
-            {story.authorRole && (
-              <div class="text-[11px] text-[#8c8980]">{story.authorRole}</div>
-            )}
-          </div>
-          <span class="text-[#b7ad9d] mx-1">·</span>
-          <span class="flex items-center gap-1">
-            <Calendar class="w-3.5 h-3.5" />
-            {story.date}
-          </span>
+{notFound ? (
+  <Layout
+    title="الحكاية غير متوفرة — يحدث في الكويت"
+    description="عذرًا، الحكاية التي تبحث عنها غير متوفرة أو ربما تم نقلها."
+  >
+    <div class="min-h-[60vh] flex items-center justify-center px-5 py-20 text-center">
+      <div class="max-w-[500px] mx-auto">
+        <div class="w-16 h-16 rounded-full bg-[#e8e1d4] text-[#126447] grid place-items-center mx-auto mb-6 shadow-sm">
+          <Compass class="w-8 h-8" />
         </div>
-
-        <div class="flex items-center gap-3">
-          <span class="inline-flex items-center gap-1.5 text-[12px] bg-white/70 px-3 py-1 rounded-full border border-[#d9d1c2]">
-            <Clock3 class="w-3.5 h-3.5 text-[#126447]" />
-            {story.read}
-          </span>
-
-          <!-- Bookmark Button -->
-          <button
-            type="button"
-            id="bookmark-btn"
-            data-slug={story.slug}
-            aria-label="حفظ الحكاية"
-            class="p-2.5 rounded-full hover:bg-[#e7e0d4] text-[#18323c] border border-transparent transition-all"
-          >
-            <Bookmark class="w-4 h-4 bookmark-icon" />
-          </button>
-
-          <!-- Share Button -->
-          <button
-            type="button"
-            id="share-btn"
-            aria-label="مشاركة أو نسخ الرابط"
-            class="p-2.5 rounded-full hover:bg-[#e7e0d4] text-[#18323c] border border-transparent transition-all"
-          >
-            <Share2 class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <!-- Featured Image -->
-    <figure class="max-w-[1100px] mx-auto px-5 md:px-8 mt-8 md:mt-10">
-      <div class="rounded-xl overflow-hidden shadow-md bg-[#d8d1c4]">
-        <img
-          src={story.image}
-          alt={story.title}
-          class="w-full max-h-[580px] object-cover"
-          loading="eager"
-        />
-      </div>
-      <figcaption class="text-[12px] text-[#88867e] mt-2.5 px-1 flex items-center justify-between">
-        <span>{story.location} — من دفتر «يحدث في الكويت»</span>
-        <span>صورة توثيقية</span>
-      </figcaption>
-    </figure>
-
-    <!-- Article Content -->
-    <div class="max-w-[780px] mx-auto px-5 md:px-8 py-10 md:py-14">
-      <div class="article-prose">
-        <!-- Lead paragraph -->
-        <p class="text-[20px] md:text-[23px] leading-[2.1] font-medium text-[#18323c] border-r-4 border-[#126447] pr-5 my-6">
-          {story.body[0]}
+        <span class="text-sm font-bold text-[#cf3935] tracking-widest uppercase">خطأ ٤٠٤</span>
+        <h1 class="text-[32px] md:text-[40px] font-bold text-[#18323c] mt-2 mb-4 leading-tight">
+          ضاعت الدرب؟ الحكاية مو هني
+        </h1>
+        <p class="text-[15px] text-[#637172] leading-relaxed mb-8">
+          يبدو أن الرابط الذي طلبته غير موجود أو تم نقله. بإمكانك دائمًا تصفح باقي حكايات الكويت التوثيقية من الصفحة الرئيسية.
         </p>
-
-        <!-- Body paragraphs -->
-        {story.body.slice(1).map((paragraph, index) => (
-          <div>
-            {index === 1 && <h2>مكانٌ يعرف أهله ونبضه</h2>}
-            <p>{paragraph}</p>
-          </div>
-        ))}
-      </div>
-
-      <!-- Article Action Footer -->
-      <div class="border-y border-[#d9d1c2] py-6 mt-12 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center bg-[#ede7dc]/40 px-5 rounded-xl">
-        <div>
-          <span class="block text-[11px] text-[#8c8980] font-medium">هذه الحكاية من</span>
-          <span class="text-[15px] font-bold text-[#126447] mt-0.5 inline-block">
-            دفتر {story.category} — {story.location}
-          </span>
-        </div>
-        <div class="flex gap-2.5">
-          <button
-            type="button"
-            id="bookmark-btn-bottom"
-            data-slug={story.slug}
-            class="inline-flex items-center gap-2 border border-[#cfc6b7] bg-white/80 rounded-full px-4 py-2 text-[13px] font-medium text-[#18323c] hover:bg-white shadow-sm transition-all"
-          >
-            <Bookmark class="w-4 h-4 bookmark-icon-bottom" />
-            <span id="bookmark-text-bottom">احفظها لوقت ثاني</span>
-          </button>
-          <button
-            type="button"
-            id="share-btn-bottom"
-            class="inline-flex items-center gap-2 bg-[#18323c] hover:bg-[#254652] text-[#f4f0e7] rounded-full px-4 py-2 text-[13px] font-medium shadow-sm transition-all"
-          >
-            <Copy class="w-4 h-4" />
-            <span id="copy-btn-text">انسخ الرابط</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Navigation to More Stories -->
-      <div class="mt-10 p-6 md:p-8 bg-[#e8e1d4] rounded-2xl flex flex-col sm:flex-row justify-between gap-5 items-start sm:items-center border border-[#d9d1c2]">
-        <div>
-          <span class="text-[11px] font-semibold text-[#126447] tracking-wider uppercase">انتهت الحكاية؟</span>
-          <p class="text-[17px] md:text-[18px] font-bold text-[#18323c] mt-1">
-            باقي حكايات من شوارع الكويت وأسواقها.
-          </p>
-        </div>
         <a
           href="/"
-          class="inline-flex items-center gap-2 text-[13px] font-bold text-[#126447] hover:text-[#0e5038] group"
+          class="inline-flex items-center gap-2 bg-[#126447] hover:bg-[#0e5038] text-white px-6 py-3 rounded-full text-sm font-medium shadow-sm transition-all"
         >
-          <span>تصفح كل الحكايات</span>
-          <ArrowLeft class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          <ArrowRight class="w-4 h-4" />
+          <span>العودة إلى الصفحة الرئيسية</span>
         </a>
       </div>
     </div>
+  </Layout>
+) : (
+  <Layout
+    title={seoTitle}
+    description={seoDescription}
+    image={story.image}
+    breadcrumbs={breadcrumbs}
+    dateModified={story.isoModified}
+    article={{
+      author: story.author,
+      date: story.isoDate,
+      dateModified: story.isoModified,
+      category: story.category,
+    }}
+  >
+    <article class="fade-up">
+      <!-- Article Header -->
+      <header class="max-w-[900px] mx-auto px-5 md:px-8 pt-8 md:pt-12">
+        <!-- Breadcrumb / Back Link -->
+        <nav class="flex items-center gap-2 text-[13px] font-medium text-[#647170] mb-4" aria-label="مسار التنقل">
+          <a
+            href="/"
+            class="inline-flex items-center gap-1.5 hover:text-[#126447] transition-colors"
+          >
+            <ArrowRight class="w-3.5 h-3.5" />
+            <span>الرئيسية</span>
+          </a>
+          <span class="text-[#b7ad9d]">/</span>
+          <a
+            href={`/category/${encodeURIComponent(story.category)}`}
+            class="hover:text-[#126447] transition-colors"
+          >
+            {story.category}
+          </a>
+        </nav>
 
-    <!-- Related Stories Section -->
-    <section class="bg-[#e8e1d4] py-12 md:py-16 border-t border-[#d9d1c2]">
-      <div class="max-w-[1100px] mx-auto px-5 md:px-8">
-        <div class="flex justify-between items-end mb-8">
-          <div>
-            <span class="text-[12px] font-semibold text-[#126447] tracking-wider uppercase">اقرأ بعد</span>
-            <h2 class="text-[26px] md:text-[32px] font-bold text-[#18323c] mt-1">حكايات على نفس الموجة</h2>
+        <!-- Category & Location -->
+        <div class="flex items-center gap-2.5 text-[13px] font-medium text-[#126447]">
+          <span class="bg-[#dce5da] text-[#126447] px-3 py-0.5 rounded-full text-xs font-semibold">
+            {story.category}
+          </span>
+          <span class="text-[#b7ad9d]">·</span>
+          <span class="flex items-center gap-1 text-[#6a7574]">
+            <MapPin class="w-3.5 h-3.5 text-[#cf3935]" />
+            {story.location}
+          </span>
+        </div>
+
+        <!-- Main Title (Single H1) -->
+        <h1 class="text-[30px] md:text-[46px] leading-[1.3] font-bold tracking-tight text-[#18323c] mt-3">
+          {story.title}
+        </h1>
+
+        <!-- Excerpt -->
+        <p class="text-[17px] md:text-[20px] leading-[1.85] text-[#5c6868] mt-4 max-w-[780px]">
+          {story.excerpt}
+        </p>
+
+        <!-- Author & Interaction Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-4 border-y border-[#d9d1c2] py-4 mt-8 text-[13px] text-[#777b74]">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[#dce5da] text-[#126447] font-bold grid place-items-center text-base shadow-sm">
+              {story.author.charAt(0)}
+            </div>
+            <div>
+              <div class="font-semibold text-[#18323c]">كتابة {story.author}</div>
+              {story.authorRole && (
+                <div class="text-[11px] text-[#8c8980]">{story.authorRole}</div>
+              )}
+            </div>
+            <span class="text-[#b7ad9d] mx-1">·</span>
+            <span class="flex items-center gap-1">
+              <Calendar class="w-3.5 h-3.5" />
+              <time datetime={story.isoDate}>{story.date}</time>
+            </span>
           </div>
-          <a href="/" class="text-[13px] font-semibold text-[#126447] hover:underline flex items-center gap-1">
-            <span>كل الحكايات</span>
-            <span>←</span>
+
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-1.5 text-[12px] bg-white/70 px-3 py-1 rounded-full border border-[#d9d1c2]">
+              <Clock3 class="w-3.5 h-3.5 text-[#126447]" />
+              {story.read}
+            </span>
+
+            <!-- Bookmark Button -->
+            <button
+              type="button"
+              id="bookmark-btn"
+              data-slug={story.slug}
+              aria-label="حفظ الحكاية"
+              class="p-2.5 rounded-full hover:bg-[#e7e0d4] text-[#18323c] border border-transparent transition-all"
+            >
+              <Bookmark class="w-4 h-4 bookmark-icon" />
+            </button>
+
+            <!-- Share Button -->
+            <button
+              type="button"
+              id="share-btn"
+              aria-label="مشاركة أو نسخ الرابط"
+              class="p-2.5 rounded-full hover:bg-[#e7e0d4] text-[#18323c] border border-transparent transition-all"
+            >
+              <Share2 class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Featured Image with Explicit Dimensions to prevent CLS -->
+      <figure class="max-w-[1100px] mx-auto px-5 md:px-8 mt-8 md:mt-10">
+        <div class="rounded-xl overflow-hidden shadow-md bg-[#d8d1c4] aspect-[16/9] md:aspect-[1.9/1]">
+          <img
+            src={optimizeImageUrl(story.image, 1200)}
+            alt={story.title}
+            width="1100"
+            height="580"
+            class="w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+        <figcaption class="text-[12px] text-[#88867e] mt-2.5 px-1 flex items-center justify-between">
+          <span>{story.location} — من دفتر «يحدث في الكويت»</span>
+          <span>صورة توثيقية</span>
+        </figcaption>
+      </figure>
+
+      <!-- Article Content with Semantic Markdown Parsing -->
+      <div class="max-w-[780px] mx-auto px-5 md:px-8 py-10 md:py-14">
+        <div class="article-prose" set:html={parsedContent} />
+
+        <!-- Article Action Footer -->
+        <div class="border-y border-[#d9d1c2] py-6 mt-12 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center bg-[#ede7dc]/40 px-5 rounded-xl">
+          <div>
+            <span class="block text-[11px] text-[#8c8980] font-medium">هذه الحكاية من</span>
+            <span class="text-[15px] font-bold text-[#126447] mt-0.5 inline-block">
+              دفتر {story.category} — {story.location}
+            </span>
+          </div>
+          <div class="flex gap-2.5">
+            <button
+              type="button"
+              id="bookmark-btn-bottom"
+              data-slug={story.slug}
+              class="inline-flex items-center gap-2 border border-[#cfc6b7] bg-white/80 rounded-full px-4 py-2 text-[13px] font-medium text-[#18323c] hover:bg-white shadow-sm transition-all"
+            >
+              <Bookmark class="w-4 h-4 bookmark-icon-bottom" />
+              <span id="bookmark-text-bottom">احفظها لوقت ثاني</span>
+            </button>
+            <button
+              type="button"
+              id="share-btn-bottom"
+              class="inline-flex items-center gap-2 bg-[#18323c] hover:bg-[#254652] text-[#f4f0e7] rounded-full px-4 py-2 text-[13px] font-medium shadow-sm transition-all"
+            >
+              <Copy class="w-4 h-4" />
+              <span id="copy-btn-text">انسخ الرابط</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation to More Stories -->
+        <div class="mt-10 p-6 md:p-8 bg-[#e8e1d4] rounded-2xl flex flex-col sm:flex-row justify-between gap-5 items-start sm:items-center border border-[#d9d1c2]">
+          <div>
+            <span class="text-[11px] font-semibold text-[#126447] tracking-wider uppercase">انتهت الحكاية؟</span>
+            <p class="text-[17px] md:text-[18px] font-bold text-[#18323c] mt-1">
+              باقي حكايات من شوارع الكويت وأسواقها.
+            </p>
+          </div>
+          <a
+            href="/"
+            class="inline-flex items-center gap-2 text-[13px] font-bold text-[#126447] hover:text-[#0e5038] group"
+          >
+            <span>تصفح كل الحكايات</span>
+            <ArrowLeft class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
           </a>
         </div>
-        <div class="grid md:grid-cols-2 gap-8">
-          {relatedStories.map((s) => (
-            <StoryCard story={s} />
-          ))}
-        </div>
       </div>
-    </section>
-  </article>
 
-  <!-- Toast Notification -->
-  <div
-    id="toast-notification"
-    class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#18323c] text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 text-sm z-50 transition-all duration-300 opacity-0 pointer-events-none translate-y-3"
-  >
-    <Check class="w-4 h-4 text-[#b8d3c2]" />
-    <span id="toast-message">تم نسخ رابط الحكاية بنجاح</span>
-  </div>
-</Layout>
+      <!-- Related Stories Section (Topical Clustering) -->
+      {relatedStories.length > 0 && (
+        <section class="bg-[#e8e1d4] py-12 md:py-16 border-t border-[#d9d1c2]">
+          <div class="max-w-[1100px] mx-auto px-5 md:px-8">
+            <div class="flex justify-between items-end mb-8">
+              <div>
+                <span class="text-[12px] font-semibold text-[#126447] tracking-wider uppercase">اقرأ بعد في {story.category}</span>
+                <h2 class="text-[26px] md:text-[32px] font-bold text-[#18323c] mt-1">حكايات على نفس الموجة</h2>
+              </div>
+              <a href={`/category/${encodeURIComponent(story.category)}`} class="text-[13px] font-semibold text-[#126447] hover:underline flex items-center gap-1">
+                <span>كل حكايات {story.category}</span>
+                <span>←</span>
+              </a>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+              {relatedStories.map((s) => (
+                <StoryCard story={s} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+    </article>
+
+    <!-- Toast Notification -->
+    <div
+      id="toast-notification"
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#18323c] text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 text-sm z-50 transition-all duration-300 opacity-0 pointer-events-none translate-y-3"
+    >
+      <Check class="w-4 h-4 text-[#b8d3c2]" />
+      <span id="toast-message">تم نسخ رابط الحكاية بنجاح</span>
+    </div>
+  </Layout>
+)}
 
 <script>
   // Toast Helper
