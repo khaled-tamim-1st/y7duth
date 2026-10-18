@@ -1,6 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getDb, articlesTable } from '@/db';
-import { and, eq, lte, or, sql } from 'drizzle-orm';
+import { getPublishedArticles } from '@/lib/articles';
 
 function cdata(str: string): string {
   return `<![CDATA[${(str || '').replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
@@ -26,45 +25,24 @@ function escapeXml(unsafe: string): string {
 }
 
 export const GET: APIRoute = async (context) => {
-  const siteUrl = (context.site?.toString() || 'https://yahduth-fi-al-kuwait.com').replace(/\/$/, '');
-  const db = getDb();
-  let articles: any[] = [];
+  const origin = context.url?.origin;
+  const siteUrl = (origin && !origin.includes('localhost') && !origin.includes('127.0.0.1')
+    ? origin
+    : context.site?.toString() || 'https://y7duth.com'
+  ).replace(/\/$/, '');
 
-  if (db) {
-    try {
-      const now = new Date();
-      articles = await db
-        .select({
-          slug: articlesTable.slug,
-          title: articlesTable.title,
-          excerpt: articlesTable.excerpt,
-          category: articlesTable.category,
-          authorName: articlesTable.authorName,
-          coverImage: articlesTable.coverImage,
-          publishedAt: articlesTable.publishedAt,
-          createdAt: articlesTable.createdAt,
-        })
-        .from(articlesTable)
-        .where(
-          or(
-            eq(articlesTable.status, 'published'),
-            and(
-              eq(articlesTable.status, 'scheduled'),
-              lte(articlesTable.scheduledFor, now)
-            )
-          )
-        )
-        .orderBy(sql`COALESCE(${articlesTable.publishedAt}, ${articlesTable.createdAt}) DESC`)
-        .limit(50);
-    } catch (e) {
-      console.error('RSS DB query error:', e);
-    }
-  }
+  const articles = await getPublishedArticles();
 
   const items = articles
     .map((art) => {
-      const storyUrl = `${siteUrl}/story/${art.slug}`;
-      const pubDate = new Date(art.publishedAt || art.createdAt).toUTCString();
+      const storyUrl = `${siteUrl}/story/${encodeURIComponent(art.slug)}`;
+      let pubDate = '';
+      try {
+        pubDate = new Date(art.publishedAt || art.createdAt).toUTCString();
+      } catch {
+        pubDate = new Date().toUTCString();
+      }
+
       const coverUrl = art.coverImage
         ? art.coverImage.startsWith('http')
           ? art.coverImage
@@ -89,7 +67,7 @@ export const GET: APIRoute = async (context) => {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>يحدث في الكويت — حكايات المكان وأهله</title>
-    <description>مجلة مستقلة تنصت للمدينة، وتكتب عن تفاصيلها الصغيرة التي تصنع حكاية كبيرة.</description>
+    <description>مجلة وثائقية كويتية مستقلة؛ نوثق حكايات أهل الديرة، أسرار الفرجان القديمة، وأكلات وتراث وتاريخ الكويت الأصيل.</description>
     <link>${siteUrl}</link>
     <atom:link href="${siteUrl}/rss.xml" rel="self" type="application/rss+xml" />
     <language>ar-KW</language>
@@ -100,6 +78,7 @@ ${items}
   return new Response(rss, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
     },
   });
 };

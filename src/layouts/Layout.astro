@@ -28,15 +28,15 @@ const {
 } = Astro.props;
 
 const cleanPath = Astro.url.pathname.length > 1 ? Astro.url.pathname.replace(/\/+$/, '') : '/';
-const canonicalURL = new URL(cleanPath, Astro.site || 'https://yahduth-fi-al-kuwait.com');
+const canonicalURL = new URL(cleanPath, Astro.site || 'https://y7duth.com');
 
 const publisherSchema = {
   "@type": "Organization",
   "name": "يحدث في الكويت",
-  "url": "https://yahduth-fi-al-kuwait.com",
+  "url": "https://y7duth.com",
   "logo": {
     "@type": "ImageObject",
-    "url": "https://yahduth-fi-al-kuwait.com/brand/kuwait-logo.png",
+    "url": "https://y7duth.com/brand/kuwait-logo.png",
     "width": 64,
     "height": 64,
   },
@@ -70,7 +70,7 @@ const websiteSchema = !article
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "يحدث في الكويت",
-      "url": "https://yahduth-fi-al-kuwait.com",
+      "url": "https://y7duth.com",
       "description": description,
       "inLanguage": "ar-KW",
       "publisher": publisherSchema,

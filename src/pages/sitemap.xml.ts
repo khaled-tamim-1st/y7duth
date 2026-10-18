@@ -1,10 +1,9 @@
 import type { APIRoute } from 'astro';
-import { getDb, articlesTable } from '@/db';
+import { getPublishedArticles } from '@/lib/articles';
 import { categories } from '@/data/stories';
-import { and, eq, lte, or, desc } from 'drizzle-orm';
 
 function escapeXml(unsafe: string): string {
-  return unsafe.replace(/[<>&'"]/g, (c) => {
+  return (unsafe || '').replace(/[<>&'"]/g, (c) => {
     switch (c) {
       case '<':
         return '&lt;';
@@ -23,37 +22,13 @@ function escapeXml(unsafe: string): string {
 }
 
 export const GET: APIRoute = async (context) => {
-  const siteUrl = (context.site?.toString() || 'https://yahduth-fi-al-kuwait.com').replace(/\/$/, '');
-  const db = getDb();
-  let articles: any[] = [];
+  const origin = context.url?.origin;
+  const siteUrl = (origin && !origin.includes('localhost') && !origin.includes('127.0.0.1')
+    ? origin
+    : context.site?.toString() || 'https://y7duth.com'
+  ).replace(/\/$/, '');
 
-  if (db) {
-    try {
-      const now = new Date();
-      articles = await db
-        .select({
-          slug: articlesTable.slug,
-          updatedAt: articlesTable.updatedAt,
-          publishedAt: articlesTable.publishedAt,
-          createdAt: articlesTable.createdAt,
-        })
-        .from(articlesTable)
-        .where(
-          or(
-            eq(articlesTable.status, 'published'),
-            and(
-              eq(articlesTable.status, 'scheduled'),
-              lte(articlesTable.scheduledFor, now)
-            )
-          )
-        )
-        .orderBy(desc(articlesTable.createdAt));
-    } catch (e) {
-      console.error('Sitemap DB query error:', e);
-    }
-  }
-
-  // Filter out 'الكل' to keep the 5 main categories
+  const articles = await getPublishedArticles();
   const targetCategories = categories.filter((cat) => cat !== 'الكل');
 
   const urls: string[] = [];
@@ -75,11 +50,17 @@ export const GET: APIRoute = async (context) => {
   </url>`);
   }
 
-  // 3. Article Pages
+  // 3. Article Pages (All 100 articles)
   for (const art of articles) {
-    const lastmodDate = art.updatedAt || art.publishedAt || art.createdAt || new Date();
-    const lastmodIso = new Date(lastmodDate).toISOString();
-    const loc = `${siteUrl}/story/${art.slug}`;
+    const lastmodDate = art.publishedAt || art.createdAt || new Date().toISOString();
+    let lastmodIso = '';
+    try {
+      lastmodIso = new Date(lastmodDate).toISOString().split('T')[0];
+    } catch {
+      lastmodIso = new Date().toISOString().split('T')[0];
+    }
+
+    const loc = `${siteUrl}/story/${encodeURIComponent(art.slug)}`;
     urls.push(`  <url>
     <loc>${escapeXml(loc)}</loc>
     <lastmod>${lastmodIso}</lastmod>
@@ -94,8 +75,10 @@ ${urls.join('\n')}
 </urlset>`;
 
   return new Response(sitemap, {
+    status: 200,
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
     },
   });
 };
