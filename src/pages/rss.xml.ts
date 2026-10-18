@@ -28,7 +28,7 @@ export const GET: APIRoute = async (context) => {
   const origin = context.url?.origin;
   const siteUrl = (origin && !origin.includes('localhost') && !origin.includes('127.0.0.1')
     ? origin
-    : context.site?.toString() || 'https://y7duth.com'
+    : context.site?.toString() || 'https://y7duth.online'
   ).replace(/\/$/, '');
 
   const articles = await getPublishedArticles();

@@ -5,6 +5,7 @@ import { desc, and, eq, lte, or } from 'drizzle-orm';
 export interface ArticleItem {
   id: string;
   slug: string;
+  oldSlug?: string;
   title: string;
   excerpt: string;
   content: string;
@@ -24,6 +25,7 @@ export interface ArticleItem {
 export const fallbackArticles: ArticleItem[] = (articlesData as any[]).map((a) => ({
   id: String(a.id),
   slug: String(a.slug),
+  oldSlug: a.old_slug ? String(a.old_slug) : undefined,
   title: String(a.title),
   excerpt: String(a.excerpt),
   content: String(a.content || ''),
@@ -160,7 +162,10 @@ export async function getArticleBySlug(slug: string): Promise<ArticleItem | null
   }
 
   const match = fallbackArticles.find(
-    (a) => a.slug === decodedSlug || a.slug === slug
+    (a) =>
+      a.slug === decodedSlug ||
+      a.slug === slug ||
+      (a.oldSlug && (a.oldSlug === decodedSlug || a.oldSlug === slug))
   );
   return match || null;
 }

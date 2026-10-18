@@ -58,7 +58,10 @@ const cachedStoryPayload = await remember(`story_${slug}`, 120, async () => {
       location: art.location || 'الكويت',
     };
 
-    const parsedContent = marked.parse(art.content) as string;
+    // Strip duplicate H1 markdown header at start of content and convert any other # to ##
+    let cleanContent = (art.content || '').replace(/^#\s+[^\r\n]+(?:\r?\n)+/, '');
+    cleanContent = cleanContent.replace(/^#\s+/gm, '## ');
+    const parsedContent = marked.parse(cleanContent) as string;
 
     const breadcrumbs = [
       { name: 'الرئيسية', url: '/' },

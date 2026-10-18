@@ -4,7 +4,7 @@ import node from '@astrojs/node';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://y7duth.com',
+  site: 'https://y7duth.online',
   trailingSlash: 'never',
   output: 'server',
   adapter: node({
