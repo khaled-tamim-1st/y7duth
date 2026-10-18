@@ -3,9 +3,8 @@ import Layout from '@/layouts/Layout.astro';
 import FeaturedStory from '@/components/FeaturedStory.astro';
 import StoryCard from '@/components/StoryCard.astro';
 import { categories } from '@/data/stories';
-import { getDb, articlesTable } from '@/db';
 import { remember } from '@/lib/cache';
-import { desc, and, eq, lte, or } from 'drizzle-orm';
+import { getPublishedArticles } from '@/lib/articles';
 import { ArrowLeft, Search, Quote, Users, MapPin, Anchor, Coffee, Image as ImageIcon, Sparkles } from 'lucide-astro';
 
 Astro.response.headers.set(
@@ -14,40 +13,7 @@ Astro.response.headers.set(
 );
 
 const publishedRows = await remember('homepage_articles_list', 60, async () => {
-  const db = getDb();
-  if (!db) return [];
-  try {
-    const now = new Date();
-    return await db
-      .select({
-        slug: articlesTable.slug,
-        category: articlesTable.category,
-        title: articlesTable.title,
-        excerpt: articlesTable.excerpt,
-        location: articlesTable.location,
-        authorName: articlesTable.authorName,
-        authorRole: articlesTable.authorRole,
-        coverImage: articlesTable.coverImage,
-        isFeatured: articlesTable.isFeatured,
-        readTime: articlesTable.readTime,
-        publishedAt: articlesTable.publishedAt,
-        createdAt: articlesTable.createdAt,
-      })
-      .from(articlesTable)
-      .where(
-        or(
-          eq(articlesTable.status, 'published'),
-          and(
-            eq(articlesTable.status, 'scheduled'),
-            lte(articlesTable.scheduledFor, now)
-          )
-        )
-      )
-      .orderBy(desc(articlesTable.createdAt));
-  } catch (e) {
-    console.debug('Home DB query notice:', e);
-    return [];
-  }
+  return await getPublishedArticles();
 });
 
 const allStories = publishedRows.map((a) => ({

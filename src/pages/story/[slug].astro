@@ -20,10 +20,11 @@ import {
   Compass,
 } from 'lucide-astro';
 
-const { slug } = Astro.params;
-const db = getDb();
+import { getArticleBySlug, getRelatedArticles } from '@/lib/articles';
 
-if (!slug || !db) {
+const { slug } = Astro.params;
+
+if (!slug) {
   Astro.response.status = 404;
   return Astro.redirect('/404');
 }
@@ -35,27 +36,9 @@ Astro.response.headers.set(
 
 const cachedStoryPayload = await remember(`story_${slug}`, 120, async () => {
   try {
-    const now = new Date();
-    const rows = await db
-      .select()
-      .from(articlesTable)
-      .where(
-        and(
-          eq(articlesTable.slug, slug),
-          or(
-            eq(articlesTable.status, 'published'),
-            and(
-              eq(articlesTable.status, 'scheduled'),
-              lte(articlesTable.scheduledFor, now)
-            )
-          )
-        )
-      )
-      .limit(1);
+    const art = await getArticleBySlug(slug);
+    if (!art) return null;
 
-    if (rows.length === 0) return null;
-
-    const art = rows[0];
     const story = {
       slug: art.slug,
       category: art.category,
@@ -69,7 +52,7 @@ const cachedStoryPayload = await remember(`story_${slug}`, 120, async () => {
         year: 'numeric',
       }),
       isoDate: new Date(art.publishedAt || art.createdAt).toISOString(),
-      isoModified: new Date(art.updatedAt || art.publishedAt || art.createdAt).toISOString(),
+      isoModified: new Date(art.publishedAt || art.createdAt).toISOString(),
       read: art.readTime || '٥ دقائق',
       image: art.coverImage,
       location: art.location || 'الكويت',
@@ -83,54 +66,7 @@ const cachedStoryPayload = await remember(`story_${slug}`, 120, async () => {
       { name: story.title, url: `/story/${story.slug}` },
     ];
 
-    const cardFields = {
-      id: articlesTable.id,
-      slug: articlesTable.slug,
-      category: articlesTable.category,
-      title: articlesTable.title,
-      excerpt: articlesTable.excerpt,
-      authorName: articlesTable.authorName,
-      authorRole: articlesTable.authorRole,
-      publishedAt: articlesTable.publishedAt,
-      createdAt: articlesTable.createdAt,
-      readTime: articlesTable.readTime,
-      coverImage: articlesTable.coverImage,
-      location: articlesTable.location,
-    };
-
-    // Query related stories with Topical Clustering (same category first)
-    let relatedRows = await db
-      .select(cardFields)
-      .from(articlesTable)
-      .where(
-        and(
-          ne(articlesTable.id, art.id),
-          eq(articlesTable.category, art.category),
-          eq(articlesTable.status, 'published')
-        )
-      )
-      .limit(2);
-
-    if (relatedRows.length < 2) {
-      const existingId = art.id;
-      const moreRows = await db
-        .select(cardFields)
-        .from(articlesTable)
-        .where(
-          and(
-            ne(articlesTable.id, existingId),
-            eq(articlesTable.status, 'published')
-          )
-        )
-        .limit(2);
-
-      for (const r of moreRows) {
-        if (relatedRows.length < 2 && !relatedRows.some((x) => x.id === r.id)) {
-          relatedRows.push(r);
-        }
-      }
-    }
-
+    const relatedRows = await getRelatedArticles(art.id, art.category, 2);
     const relatedStories = relatedRows.map((r) => ({
       slug: r.slug,
       category: r.category as any,
