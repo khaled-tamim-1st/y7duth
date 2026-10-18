@@ -3,6 +3,7 @@ import Layout from '@/layouts/Layout.astro';
 import FeaturedStory from '@/components/FeaturedStory.astro';
 import StoryCard from '@/components/StoryCard.astro';
 import { categories } from '@/data/stories';
+import { getCategorySlug } from '@/lib/categories';
 import { remember } from '@/lib/cache';
 import { getPublishedArticles } from '@/lib/articles';
 import { ArrowLeft, Search, Quote, Users, MapPin, Anchor, Coffee, Image as ImageIcon, Sparkles } from 'lucide-astro';
@@ -137,7 +138,7 @@ const categoriesMeta = [
           <div class="flex items-center gap-2 min-w-max" id="category-filter-buttons">
             {categories.map((c) => (
               <a
-                href={c === 'الكل' ? '#كل-الحكايات' : `/category/${encodeURIComponent(c)}`}
+                href={c === 'الكل' ? '#كل-الحكايات' : `/category/${getCategorySlug(c)}`}
                 class={`category-tab-btn rounded-full px-4 py-2 text-[13px] font-medium transition-all ${
                   c === 'الكل'
                     ? 'bg-[#18323c] text-[#f4f0e7] shadow-sm active-tab'
@@ -231,7 +232,7 @@ const categoriesMeta = [
               const IconComp = cat.icon;
               return (
                 <a
-                  href={`/category/${encodeURIComponent(cat.name)}`}
+                  href={`/category/${getCategorySlug(cat.name)}`}
                   class="group block bg-[#ede7dc]/70 hover:bg-white p-7 rounded-2xl border border-[#d9d1c2] hover:border-[#126447] shadow-sm hover:shadow-md transition-all text-right no-underline"
                 >
                   <div class="flex items-center justify-between mb-4">

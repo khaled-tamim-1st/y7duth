@@ -6,12 +6,27 @@ import { getDb, articlesTable } from '@/db';
 import { categories } from '@/data/stories';
 import { remember } from '@/lib/cache';
 import { getArticlesByCategory } from '@/lib/articles';
+import { getCategoryBySlugOrName } from '@/lib/categories';
+import { CATEGORY_SEO_META } from '@/lib/seo';
 import { ArrowRight, Tag, BookOpen } from 'lucide-astro';
 
-const { category } = Astro.params;
+const { category: rawParam } = Astro.params;
 
-if (!category) {
+if (!rawParam) {
   return Astro.redirect('/404');
+}
+
+const categoryConfig = getCategoryBySlugOrName(rawParam);
+if (!categoryConfig) {
+  return Astro.redirect('/404');
+}
+
+const categoryName = categoryConfig.name;
+const categorySlug = categoryConfig.slug;
+
+// 301 Permanent Redirect for link equity consolidation if accessed via raw Arabic URL
+if (decodeURIComponent(rawParam) !== categorySlug) {
+  return Astro.redirect(`/category/${categorySlug}`, 301);
 }
 
 Astro.response.headers.set(
@@ -19,16 +34,8 @@ Astro.response.headers.set(
   'public, max-age=60, s-maxage=300, stale-while-revalidate=86400'
 );
 
-const categoryDescriptions: Record<string, string> = {
-  'أهل الديرة': 'شخصيات ملهمة، رواد، حرفيون، وقصص إنسانية صنعت روح الكويت وتراثها الحي.',
-  'في الفريج': 'أسواق قديمة، بيوت تراثية، فرجان عتيقة، ومقاهٍ شعبية تحفظ أصالة المكان.',
-  'سوالف وتراث': 'حكايات البحر والغوص، عادات البيوت، لهجة ومفردات أهل الكويت، وأمثال الطيبين.',
-  'سفرة الديرة': 'أكلات البيت الكويتي القديم، طقوس الريوق المهيّل، واستكانة الشاي وسفرة البركة.',
-  'ألبوم الذاكرة': 'صور نادرة، وثائق قديمة، وذكريات توثق معالم الكويت وتاريخها الجميل.',
-};
-
-const categoryRows = await remember(`category_${category}`, 60, async () => {
-  return await getArticlesByCategory(category);
+const categoryRows = await remember(`category_${categorySlug}`, 60, async () => {
+  return await getArticlesByCategory(categoryName);
 });
 
 const categoryStories = categoryRows.map((r) => ({
@@ -44,16 +51,14 @@ const categoryStories = categoryRows.map((r) => ({
   location: r.location || 'الكويت',
 }));
 
-import { CATEGORY_SEO_META } from '@/lib/seo';
-
-const seoMeta = CATEGORY_SEO_META[category] || {
-  title: `حكايات ${category} — يحدث في الكويت`,
-  desc: categoryDescriptions[category] || `جميع الحكايات والتقارير المصنفة تحت ${category}.`,
+const seoMeta = CATEGORY_SEO_META[categoryName] || {
+  title: `حكايات ${categoryName} — يحدث في الكويت`,
+  desc: categoryConfig.desc || `جميع الحكايات والتقارير المصنفة تحت ${categoryName}.`,
 };
 
 const breadcrumbs = [
   { name: 'الرئيسية', url: '/' },
-  { name: category, url: `/category/${encodeURIComponent(category)}` },
+  { name: categoryName, url: `/category/${categorySlug}` },
 ];
 ---
 
@@ -81,7 +86,7 @@ const breadcrumbs = [
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 class="text-[34px] md:text-[48px] font-bold text-[#18323c] tracking-tight">
-            {category}
+            {categoryName}
           </h1>
           <p class="text-[16px] text-[#637172] mt-2 max-w-[650px] leading-relaxed">
             {seoMeta.desc}
@@ -105,7 +110,7 @@ const breadcrumbs = [
         <div class="w-14 h-14 rounded-full bg-[#e8e1d4] text-[#126447] grid place-items-center mx-auto mb-4">
           <BookOpen class="w-7 h-7" />
         </div>
-        <h3 class="text-xl font-bold text-[#18323c]">حكايات «{category}» قيد الإعداد</h3>
+        <h3 class="text-xl font-bold text-[#18323c]">حكايات «{categoryName}» قيد الإعداد</h3>
         <p class="text-sm text-[#777b74] mt-2 max-w-md mx-auto leading-relaxed">
           نعمل حالياً على كتابة وتوثيق حكايات مميزة لهذا القسم. اشترك في رسالتنا الأسبوعية لتكون أول من يقرأها فور نشرها.
         </p>

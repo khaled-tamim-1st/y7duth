@@ -1,5 +1,6 @@
 ---
 import { categories } from '@/data/stories';
+import { getCategorySlug } from '@/lib/categories';
 import { Search, Menu, X } from 'lucide-astro';
 
 const navCategories = categories.filter((c) => c !== 'الكل');
@@ -86,7 +87,7 @@ const initialTime = new Intl.DateTimeFormat('ar-KW', {
       <nav class="hidden lg:flex items-center gap-6 xl:gap-7 text-[15px] text-[#41535a] font-medium" aria-label="التنقل الرئيسي">
         {navCategories.map((cat) => (
           <a
-            href={`/category/${encodeURIComponent(cat)}`}
+            href={`/category/${getCategorySlug(cat)}`}
             class="hover:text-[#126447] relative py-1 transition-colors after:content-[''] after:absolute after:bottom-0 after:right-0 after:w-0 after:h-[2px] after:bg-[#126447] hover:after:w-full after:transition-all"
           >
             {cat}
@@ -143,7 +144,7 @@ const initialTime = new Intl.DateTimeFormat('ar-KW', {
     <div class="grid grid-cols-2 gap-3 pb-3">
       {navCategories.map((cat) => (
         <a
-          href={`/category/${encodeURIComponent(cat)}`}
+          href={`/category/${getCategorySlug(cat)}`}
           class="py-2.5 px-3 rounded-lg text-[#18323c] hover:bg-[#e8e1d4] hover:text-[#126447] font-medium text-sm transition-colors"
         >
           {cat}

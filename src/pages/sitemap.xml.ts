@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getPublishedArticles } from '@/lib/articles';
-import { categories } from '@/data/stories';
+import { CATEGORIES_CONFIG } from '@/lib/categories';
 
 function escapeXml(unsafe: string): string {
   return (unsafe || '').replace(/[<>&'"]/g, (c) => {
@@ -29,7 +29,6 @@ export const GET: APIRoute = async (context) => {
   ).replace(/\/$/, '');
 
   const articles = await getPublishedArticles();
-  const targetCategories = categories.filter((cat) => cat !== 'الكل');
 
   const urls: string[] = [];
 
@@ -40,17 +39,17 @@ export const GET: APIRoute = async (context) => {
     <priority>1.0</priority>
   </url>`);
 
-  // 2. Category Pages
-  for (const cat of targetCategories) {
-    const loc = `${siteUrl}/category/${encodeURIComponent(cat)}`;
+  // 2. Category Hub Pages (High Priority Pillar Architecture)
+  for (const cat of CATEGORIES_CONFIG) {
+    const loc = `${siteUrl}/category/${cat.slug}`;
     urls.push(`  <url>
     <loc>${escapeXml(loc)}</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>`);
   }
 
-  // 3. Article Pages (All 100 articles)
+  // 3. Article Pages with Google Image Sitemap Extension
   for (const art of articles) {
     const lastmodDate = art.publishedAt || art.createdAt || new Date().toISOString();
     let lastmodIso = '';
@@ -61,16 +60,32 @@ export const GET: APIRoute = async (context) => {
     }
 
     const loc = `${siteUrl}/story/${encodeURIComponent(art.slug)}`;
+
+    let imageTag = '';
+    if (art.coverImage) {
+      const imgUrl = art.coverImage.startsWith('http')
+        ? art.coverImage
+        : `${siteUrl}${art.coverImage.startsWith('/') ? '' : '/'}${art.coverImage}`;
+
+      imageTag = `
+    <image:image>
+      <image:loc>${escapeXml(imgUrl)}</image:loc>
+      <image:title>${escapeXml(art.title)}</image:title>
+      <image:caption>${escapeXml(art.excerpt || art.title)}</image:caption>
+    </image:image>`;
+    }
+
     urls.push(`  <url>
     <loc>${escapeXml(loc)}</loc>
     <lastmod>${lastmodIso}</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.85</priority>${imageTag}
   </url>`);
   }
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${urls.join('\n')}
 </urlset>`;
 

@@ -180,20 +180,82 @@ export async function getArticlesByCategory(category: string): Promise<ArticleIt
 }
 
 /**
- * Fetch related stories (same category first, excluding current article).
+ * Fetch linear Next and Previous articles in circular chain (Doubly-Linked List)
+ * Guarantees zero orphan pages and unbroken crawl depth.
+ */
+export async function getPrevNextArticles(currentId: string): Promise<{
+  prev: ArticleItem | null;
+  next: ArticleItem | null;
+}> {
+  const all = await getPublishedArticles();
+  if (all.length <= 1) return { prev: null, next: null };
+
+  const currentIndex = all.findIndex((a) => a.id === currentId);
+  if (currentIndex === -1) return { prev: null, next: null };
+
+  const prevIndex = (currentIndex - 1 + all.length) % all.length;
+  const nextIndex = (currentIndex + 1) % all.length;
+
+  return {
+    prev: all[prevIndex],
+    next: all[nextIndex],
+  };
+}
+
+/**
+ * Fetch related stories with dynamic rotating topical clustering and cross-silo linking.
+ * Prevents PageRank starvation by rotating recommendations through the category.
  */
 export async function getRelatedArticles(
   currentId: string,
   category: string,
-  limit = 2
+  limit = 4
 ): Promise<ArticleItem[]> {
   const all = await getPublishedArticles();
   const sameCategory = all.filter((a) => a.id !== currentId && a.category === category);
 
-  if (sameCategory.length >= limit) {
-    return sameCategory.slice(0, limit);
+  const selected: ArticleItem[] = [];
+  const selectedIds = new Set<string>();
+
+  if (sameCategory.length > 0) {
+    // Locate current article's index to rotate from
+    const currentIndex = sameCategory.findIndex((a) => a.id === currentId);
+    const startIdx = currentIndex >= 0 ? (currentIndex + 1) % sameCategory.length : 0;
+
+    // Pick up to 3 stories from the same category sequentially starting after current
+    for (let i = 0; i < sameCategory.length && selected.length < 3; i++) {
+      const candidate = sameCategory[(startIdx + i) % sameCategory.length];
+      if (candidate.id !== currentId && !selectedIds.has(candidate.id)) {
+        selected.push(candidate);
+        selectedIds.add(candidate.id);
+      }
+    }
   }
 
+  // Cross-category linking (pick 1 story from another category for topic exploration)
   const otherCategories = all.filter((a) => a.id !== currentId && a.category !== category);
-  return [...sameCategory, ...otherCategories].slice(0, limit);
+  if (otherCategories.length > 0 && selected.length < limit) {
+    // Deterministic selection based on currentId hash so each page has stable cross-links
+    const hash = currentId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    const crossIndex = hash % otherCategories.length;
+    const candidate = otherCategories[crossIndex];
+    if (candidate && !selectedIds.has(candidate.id)) {
+      selected.push(candidate);
+      selectedIds.add(candidate.id);
+    }
+  }
+
+  // If still under limit, backfill from remaining articles
+  if (selected.length < limit) {
+    for (const art of all) {
+      if (art.id !== currentId && !selectedIds.has(art.id)) {
+        selected.push(art);
+        selectedIds.add(art.id);
+        if (selected.length >= limit) break;
+      }
+    }
+  }
+
+  return selected.slice(0, limit);
 }
+
