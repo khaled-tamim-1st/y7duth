@@ -23,11 +23,24 @@ import {
 import { getArticleBySlug, getRelatedArticles, getPrevNextArticles } from '@/lib/articles';
 import { getCategorySlug } from '@/lib/categories';
 
-const { slug } = Astro.params;
+const { slug: rawSlug } = Astro.params;
 
-if (!slug) {
+if (!rawSlug) {
   Astro.response.status = 404;
   return Astro.redirect('/404');
+}
+
+const decodedSlug = decodeURIComponent(rawSlug);
+const artLookup = await getArticleBySlug(decodedSlug);
+
+if (!artLookup) {
+  Astro.response.status = 404;
+  return Astro.redirect('/404');
+}
+
+// 301 Permanent Redirect for link equity consolidation if accessed via old Arabic slug or alternate slug
+if (artLookup.slug !== decodedSlug) {
+  return Astro.redirect(`/story/${artLookup.slug}`, 301);
 }
 
 Astro.response.headers.set(
@@ -35,10 +48,9 @@ Astro.response.headers.set(
   'public, max-age=120, s-maxage=600, stale-while-revalidate=86400'
 );
 
-const cachedStoryPayload = await remember(`story_${slug}`, 120, async () => {
+const cachedStoryPayload = await remember(`story_${artLookup.slug}`, 120, async () => {
   try {
-    const art = await getArticleBySlug(slug);
-    if (!art) return null;
+    const art = artLookup;
 
     const story = {
       slug: art.slug,
